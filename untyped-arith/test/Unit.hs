@@ -46,7 +46,6 @@ case_parseSuccSuccZeroParens =
         Right [(TermSucc _ (TermSucc _ (TermZero _)))] -> return ()
         otherwise -> assertFailure "Expected (TermSucc _ (TermSucc _ (TermZero _)))"
 
-
 case_parsePredZero =
     case parseUntypedArith "pred 0" of
         Right [(TermPred _ (TermZero _))] -> return ()

@@ -2,20 +2,6 @@ module Parse (
     parseUntypedArith
 ) where
 
-{-
-Example Programs:
-
-if true then (succ 0) else 0
-
-if (isZero succ 0) then 0 else succ 0
-
-succ succ succ 0
-
-pred succ 0
-
--}
-
-
 import Text.Parsec
 import Text.Parsec.Char (char, string, spaces)
 import Text.Parsec.Combinator (many1, choice, chainl1)
@@ -48,7 +34,6 @@ parens = do
 termZero = char '0' >> (return $ TermZero Blank)
 termTrue = string "true" >> (return $ TermTrue Blank)
 termFalse = string "false" >> (return $ TermFalse Blank)
-
 
 termIsZero = string "iszero" >> spaces >> term >>= (\t -> return $ TermIsZero Blank t)
 termSucc = string "succ" >> spaces >> term >>= (\t -> return $ TermSucc Blank t)
