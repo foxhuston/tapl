@@ -61,4 +61,5 @@ isNumericValue _ = False
 isValue :: Term -> Bool
 isValue (TermFalse _) = True
 isValue (TermZero _) = True
+isValue (TermTrue _) = True
 isValue t = isNumericValue t

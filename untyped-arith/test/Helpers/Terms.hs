@@ -1,6 +1,8 @@
 module Helpers.Terms (
     NumericTerm(..),
-    BoolTerm(..)
+    BoolTerm(..),
+    ValueTerm(..),
+    NonValueTerm(..)
 ) where
 
 import Test.QuickCheck
@@ -47,6 +49,29 @@ newtype BoolTerm = BoolTerm Term
     deriving (Show)
 
 instance Arbitrary BoolTerm where
+    arbitrary = arbitraryBoolTerm
+
+arbitraryBoolTerm :: Gen BoolTerm
+arbitraryBoolTerm = do
+    term <- elements [TermTrue Blank, TermFalse Blank]
+    return $ BoolTerm term
+
+
+newtype ValueTerm = ValueTerm Term
+    deriving (Show)
+
+instance Arbitrary ValueTerm where
     arbitrary = do
-        term <- elements [TermTrue Blank, TermFalse Blank]
-        return $ BoolTerm term
+        sized $ \n -> do
+            (BoolTerm t1) <- arbitraryBoolTerm
+            (NumericTerm t2) <- arbitrarySizedNumericTerm n
+            t <- elements [t1, t2]
+            return $ ValueTerm t
+
+newtype NonValueTerm = NonValueTerm Term
+    deriving (Show)
+
+instance Arbitrary NonValueTerm where
+    arbitrary = sized $ \n -> do
+        t <- arbitrarySizedTerm (n + 1)
+        return $ NonValueTerm t
