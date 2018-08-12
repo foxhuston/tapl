@@ -22,8 +22,10 @@ import Text.Parsec.Combinator (many1, choice, chainl1)
 
 import Data.Terms
 
-parseUntypedArith :: String -> Either ParseError Term
-parseUntypedArith = parse term "some-file"
+parseUntypedArith :: String -> Either ParseError [Term]
+parseUntypedArith = parse program "some-file"
+
+program = sepBy term spaces
 
 term =
     parens
