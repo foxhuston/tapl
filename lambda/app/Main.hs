@@ -5,7 +5,7 @@ import System.Environment (getArgs)
 import Lib
 
 main :: IO ()
-main = case parseUntypedLambda "(\\x. x x) (\\x . x x)" of
+main = case parseUntypedLambda "(\\x. x x) (\\x. x x)" of
     Right out -> print out -- putStrLn $ uncurry showTermInContext $ out
     Left err -> print err
 

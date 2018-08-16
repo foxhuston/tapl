@@ -25,11 +25,10 @@ case_ItParsesAbstractions =
         t @?= TermAbs Blank "x" (TermVar Blank 0)
 
 case_NestedParseWorks =
-    let (Right (_, t)) = parseUntypedLambda "(\\x. x x) (\\x. x x)" in
+    let (Right (_, t)) = parseUntypedLambda "(\\x. x x) (\\x . x x)" in
         t @?= TermApp Blank
-                (TermAbs Blank "x" (TermVar Blank 0) (TermVar Blank 0))
-                (TermAbs Blank "x" (TermVar Blank 0) (TermVar Blank 0))
-
+                (TermAbs Blank "x" (TermApp Blank (TermVar Blank 0) (TermVar Blank 0)))
+                (TermAbs Blank "x" (TermApp Blank (TermVar Blank 0) (TermVar Blank 0)))
 
 unitTests :: TestTree
 unitTests = $(testGroupGenerator)

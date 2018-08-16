@@ -43,7 +43,7 @@ parens = do
 
 termAbs = do
     char '\\'
-    varName <- endBy1 letter (char '.')
+    varName <- endBy1 letter (spaces *> char '.')
     spaces
 
     -- Push new var name onto bound state stack
