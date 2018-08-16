@@ -1,7 +1,6 @@
 {-# Language TemplateHaskell #-}
 
 module Quick (
-    quickTests
 ) where
 
 import Test.Tasty

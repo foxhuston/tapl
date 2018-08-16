@@ -17,16 +17,17 @@ data Info =
         column:: Int
     }
     | Blank
+    deriving (Eq)
 
 instance Show Info where
     show (Info line column) = "{ line: " ++ (show line) ++ ", column: " ++ (show column) ++ "}"
     show Blank = ""
 
 data Term = 
-      TermVar Info Int Int
+      TermVar Info Int
     | TermAbs Info String Term
     | TermApp Info Term Term
-    deriving (Show)
+    deriving (Show, Eq)
 
 data Binding = NameBind
     deriving (Show)
@@ -37,7 +38,7 @@ contextLength :: Context -> Int
 contextLength = length
 
 indexToName :: Context -> Int -> String
-indexToName ctx n = fst $ ctx !! n
+indexToName ctx n = fst $ ctx !! ((length ctx) - 1 - n)
 
 getIndexFromContext :: Context -> String -> Maybe Int
 getIndexFromContext ctx name =
@@ -60,11 +61,7 @@ showTermInContext ctx (TermAbs _ x t1) =
         "(λ" ++ x' ++ ". " ++ showTermInContext ctx' t1 ++ ")"
 showTermInContext ctx (TermApp _ t1 t2) =
     "(" ++ showTermInContext ctx t1 ++ " " ++ showTermInContext ctx t2 ++ ")"
-showTermInContext ctx (TermVar _ x n) =
-    if contextLength ctx == n then
-        indexToName ctx x
-    else
-        "[bad index]"
+showTermInContext ctx (TermVar _ n) = indexToName ctx n
 
 isValue :: Term -> Bool
 isValue (TermAbs _ _ _) = True

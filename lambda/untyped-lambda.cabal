@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: baf6f1fe00ef88b2170e2289cfd8890f2a25f93c3305220c0f7bc54a648c7b21
+-- hash: 57855f966f302d1b63a7ebacc08242607c3543d79ea68cda0bfd57254b85f688
 
 name:           untyped-lambda
 version:        0.1.0.0
@@ -56,7 +56,6 @@ test-suite untyped-lambda-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Helpers.Terms
       Quick
       Unit
       Paths_untyped_lambda

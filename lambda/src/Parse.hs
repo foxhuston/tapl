@@ -20,18 +20,18 @@ begin = do
     return (free, t)
 
 expr :: Parsec String (Context, Context) Term
-expr = do
-    spaces
-    t1 <- term
-    t2 <- option t1 ((\t2' -> TermApp Blank t1 t2') <$> (spaces *> expr))
-    spaces
-    return t2
+expr = try (term `chainl1` parseApp) <|> term
 
 term :: Parsec String (Context, Context) Term
 term =
     (try parens)
     <|> (try termAbs)
     <|> termVar
+
+parseApp :: Parsec String (Context, Context) (Term -> Term -> Term)
+parseApp = do
+    spaces
+    return $ TermApp Blank
 
 parens = do
     char '('
@@ -44,13 +44,15 @@ parens = do
 termAbs = do
     char '\\'
     varName <- endBy1 letter (char '.')
+    spaces
 
-    -- Push new var name onto state
+    -- Push new var name onto bound state stack
     (free, bound) <- getState
     putState $ (free, bound ++ [(varName, NameBind)])
 
     t1 <- expr
 
+    -- Pop it off of the bound state stack
     (free, bound) <- getState
     putState $ (free, reverse $ tail $ reverse bound)
 
@@ -67,6 +69,4 @@ termVar = do
                     putState (newFree, bound)
                     return $ (length newFree) + (length bound) - 1
 
-    ctx <- getState
-
-    return $ TermVar Blank (length ctx) idx
+    return $ TermVar Blank idx
