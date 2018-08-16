@@ -4,8 +4,12 @@ module Data.Terms (
     Binding(..),
     Context(..),
     showTermInContext,
+    getIndexFromContext,
     isValue
 ) where
+
+import Data.List (findIndex)
+import Data.Maybe (isJust)
 
 data Info =
     Info {
@@ -35,12 +39,17 @@ contextLength = length
 indexToName :: Context -> Int -> String
 indexToName ctx n = fst $ ctx !! n
 
-inContext :: String -> Context -> Bool
-inContext name = any (\(s, _) -> name == s)
+getIndexFromContext :: Context -> String -> Maybe Int
+getIndexFromContext ctx name =
+    (\idx -> (length ctx) - 1 - idx) <$>
+    findIndex (\(s, _) -> name == s) ctx
+
+hasVar :: Context -> String -> Bool
+hasVar ctx name = isJust $ getIndexFromContext ctx name
 
 pickFreshName :: Context -> String -> (Context, String)
 pickFreshName ctx x
-    | x `inContext` ctx
+    | ctx `hasVar` x
     = pickFreshName ctx (x ++ "'")
 
     | otherwise = (ctx ++ [(x, NameBind)], x)

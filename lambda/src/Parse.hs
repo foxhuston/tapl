@@ -8,24 +8,29 @@ import Text.Parsec.Combinator (many1, choice, chainl1, endBy1, option)
 
 import Data.Terms
 
-
 parseUntypedLambda :: String -> Either ParseError (Context, Term)
-parseUntypedLambda s = do
-    parse <- runParser expr [] "some-file" s
-    return $ ([], parse)
+parseUntypedLambda = runParser begin ([], []) "some-file"
 
 -- program = sepBy term spaces
 
-expr :: Parsec String Context Term
+begin :: Parsec String (Context, Context) (Context, Term)
+begin = do
+    t <- expr
+    (free, _) <- getState
+    return (free, t)
+
+expr :: Parsec String (Context, Context) Term
 expr = do
+    spaces
     t1 <- term
-    t2 <- option (return t1) ((\t2' -> pure $ TermApp Blank t1 t2') <$> (spaces *> expr))
+    t2 <- option t1 ((\t2' -> TermApp Blank t1 t2') <$> (spaces *> expr))
+    spaces
     return t2
 
-term :: Parsec String Context Term
+term :: Parsec String (Context, Context) Term
 term =
-    parens
-    <|> termAbs
+    (try parens)
+    <|> (try termAbs)
     <|> termVar
 
 parens = do
@@ -39,9 +44,29 @@ parens = do
 termAbs = do
     char '\\'
     varName <- endBy1 letter (char '.')
+
+    -- Push new var name onto state
+    (free, bound) <- getState
+    putState $ (free, bound ++ [(varName, NameBind)])
+
     t1 <- expr
+
+    (free, bound) <- getState
+    putState $ (free, reverse $ tail $ reverse bound)
+
     return $ TermAbs Blank varName t1
 
 termVar = do
     varName <- many1 letter
-    return $ TermVar Blank 0 0
+
+    (free, bound) <- getState
+    idx <- case getIndexFromContext bound varName of
+                (Just idx) -> return idx
+                Nothing -> do
+                    let newFree = (varName, NameBind) : free
+                    putState (newFree, bound)
+                    return $ (length newFree) + (length bound) - 1
+
+    ctx <- getState
+
+    return $ TermVar Blank (length ctx) idx

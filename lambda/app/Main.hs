@@ -5,7 +5,7 @@ import System.Environment (getArgs)
 import Lib
 
 main :: IO ()
-main = print $ parseUntypedLambda "x x"
+main = print $ parseUntypedLambda "\\x. \\y. x y w z"
 
 -- main :: IO ()
 -- main = do
