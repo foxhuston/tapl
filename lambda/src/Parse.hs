@@ -4,19 +4,21 @@ module Parse (
 
 import Text.Parsec
 import Text.Parsec.Char (char, string, spaces, letter)
-import Text.Parsec.Combinator (many1, choice, chainl1, endBy1, option)
+import Text.Parsec.Combinator (many1, choice, chainl1, endBy, option)
 
 import Data.Terms
 
-parseUntypedLambda :: String -> Either ParseError (Context, Term)
-parseUntypedLambda = runParser begin ([], []) "some-file"
+parseUntypedLambda :: String -> Either ParseError [(Context, Term)]
+parseUntypedLambda = runParser program ([], []) "some-file"
 
--- program = sepBy term spaces
+program :: Parsec String (Context, Context) [(Context, Term)]
+program = endBy begin (char ';' *> spaces)
 
 begin :: Parsec String (Context, Context) (Context, Term)
 begin = do
     t <- expr
     (free, _) <- getState
+    putState ([], [])
     return (free, t)
 
 expr :: Parsec String (Context, Context) Term
