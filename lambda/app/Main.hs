@@ -5,8 +5,11 @@ import System.Environment (getArgs)
 import Lib
 
 main :: IO ()
-main = case parseUntypedLambda "(\\x. x x) (\\x. x x)" of
-    Right out -> print out -- putStrLn $ uncurry showTermInContext $ out
+main = case parseUntypedLambda "(\\t.\\f. t) (\\y. y y) (\\z. z)" of
+    Right (ctx, term) -> do
+        putStr $ showTermInContext ctx term
+        putStr " -> "
+        putStrLn $ showTermInContext ctx $ eval term
     Left err -> print err
 
 -- main :: IO ()

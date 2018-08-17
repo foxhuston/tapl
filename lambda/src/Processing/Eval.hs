@@ -14,13 +14,13 @@ eval t =
 termShift :: Int -> Term -> Term
 termShift d t = walk 0 t
     where
-        walk c (TermVar i k) = TermVar i $ (if k < c then c else k + d)
-        walk c (TermAbs i h t1) = TermAbs i h $ walk (c + 1) t1
+        walk c (TermVar i k)     = TermVar i $ (if k < c then k else k + d)
+        walk c (TermAbs i h t1)  = TermAbs i h $ walk (c + 1) t1
         walk c (TermApp i t1 t2) = TermApp i (walk c t1) (walk c t2)
 
 termSub :: Int -> Term -> Term -> Term
-termSub j s t1@(TermVar _ k) = if j == k then t1 else s
-termSub j s (TermAbs i h t1) = TermAbs i h $ termSub (j + 1) (termShift 1 s) t1
+termSub j s t1@(TermVar _ k)  = if j == k then s else t1
+termSub j s (TermAbs i h t1)  = TermAbs i h $ termSub (j + 1) (termShift 1 s) t1
 termSub j s (TermApp i t1 t2) = TermApp i (termSub j s t1) (termSub j s t2)
 
 eval1 :: Term -> Maybe Term
