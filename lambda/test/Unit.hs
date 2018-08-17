@@ -12,7 +12,7 @@ import Parse
 import Data.Terms
 
 case_ItIsLeftAssociative =
-    let (Right (_, t)) = parseUntypedLambda "x y z" in
+    let (Right [(_, t)]) = parseUntypedLambda "x y z;" in
         t @?= TermApp Blank (
             TermApp Blank
                 (TermVar Blank 0)
@@ -21,11 +21,11 @@ case_ItIsLeftAssociative =
             (TermVar Blank 2)
 
 case_ItParsesAbstractions =
-    let (Right (_, t)) = parseUntypedLambda "\\x. x" in
+    let (Right [(_, t)]) = parseUntypedLambda "\\x. x;" in
         t @?= TermAbs Blank "x" (TermVar Blank 0)
 
 case_NestedParseWorks =
-    let (Right (_, t)) = parseUntypedLambda "(\\x. x x) (\\x . x x)" in
+    let (Right [(_, t)]) = parseUntypedLambda "(\\x. x x) (\\x . x x);" in
         t @?= TermApp Blank
                 (TermAbs Blank "x" (TermApp Blank (TermVar Blank 0) (TermVar Blank 0)))
                 (TermAbs Blank "x" (TermApp Blank (TermVar Blank 0) (TermVar Blank 0)))
