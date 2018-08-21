@@ -11,43 +11,32 @@ eval t =
         Nothing -> t
         
 
+termShift :: Int -> Term -> Term
+termShift d t = walk 0 t
+    where
+        walk c (TermVar i k)     = TermVar i $ (if k < c then k else k + d)
+        walk c (TermAbs i h t1)  = TermAbs i h $ walk (c + 1) t1
+        walk c (TermApp i t1 t2) = TermApp i (walk c t1) (walk c t2)
+
+termSub :: Int -> Term -> Term -> Term
+termSub j s t1@(TermVar _ k)  = if j == k then s else t1
+termSub j s (TermAbs i h t1)  = TermAbs i h $ termSub (j + 1) (termShift 1 s) t1
+termSub j s (TermApp i t1 t2) = TermApp i (termSub j s t1) (termSub j s t2)
+
 eval1 :: Term -> Maybe Term
 eval1 term
-    | (TermIf _ (TermTrue _) t2 _) <- term
-    = Just t2
+    | (TermApp i t1 t2) <- term
+    , (Just t1') <- eval1 t1
+    = Just $ TermApp i t1' t2
 
-    | (TermIf _ (TermFalse _) _ t3) <- term
-    = Just t3
+    | (TermApp i t1 t2) <- term
+    , isValue t1
+    , (Just t2') <- eval1 t2
+    = Just $ TermApp i t1 t2'
 
-    | (TermIf info t1 t2 t3) <- term
-    , (Just t12) <- eval1 t1
-    = Just $ TermIf info t12 t2 t3
-
-    | (TermSucc info t1) <- term
-    , (Just t12) <- eval1 t1
-    = Just $ TermSucc info t12
-
-    | (TermPred _ (TermZero zinfo)) <- term
-    = Just $ TermZero zinfo
-
-    | (TermPred _ (TermSucc _ nv)) <- term
-    , isNumericValue nv
-    = Just nv
-
-    | (TermPred pinfo t1) <- term
-    , (Just t12) <- eval1 t1
-    = Just $ TermPred pinfo t12
-
-    | (TermIsZero _ (TermZero _)) <- term
-    = Just $ TermTrue Blank
-
-    | (TermIsZero _ (TermSucc _ nv1)) <- term
-    , isNumericValue nv1
-    = Just $ TermFalse Blank
-
-    | (TermIsZero zinfo t1) <- term
-    , (Just t12) <- eval1 t1
-    = Just $ TermIsZero zinfo t12
+    | (TermApp _ (TermAbs i n t1) t2) <- term
+    , isValue t2
+    = Just $ termShift (-1) (termSub 0 t2 t1)
 
     | _ <- term
     = Nothing

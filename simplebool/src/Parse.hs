@@ -1,54 +1,74 @@
 module Parse (
-    parseUntypedArith
+    parseUntypedLambda
 ) where
 
 import Text.Parsec
-import Text.Parsec.Char (char, string, spaces)
-import Text.Parsec.Combinator (many1, choice, chainl1)
+import Text.Parsec.Char (char, string, spaces, letter)
+import Text.Parsec.Combinator (many1, choice, chainl1, endBy, option)
 
 import Data.Terms
 
-parseUntypedArith :: String -> Either ParseError [Term]
-parseUntypedArith = parse program "some-file"
+parseUntypedLambda :: String -> Either ParseError [(Context, Term)]
+parseUntypedLambda = runParser program ([], []) "some-file"
 
-program = sepBy term spaces
+program :: Parsec String (Context, Context) [(Context, Term)]
+program = endBy begin (char ';' *> spaces)
 
+begin :: Parsec String (Context, Context) (Context, Term)
+begin = do
+    t <- expr
+    (free, _) <- getState
+    putState ([], [])
+    return (free, t)
+
+expr :: Parsec String (Context, Context) Term
+expr = try (term `chainl1` parseApp) <|> term
+
+term :: Parsec String (Context, Context) Term
 term =
-    parens
-    <|> (try termZero)
-    <|> (try termIf)
-    <|> termTrue
-    <|> termFalse
-    <|> termIsZero
-    <|> termSucc
-    <|> termPred
+    (try parens)
+    <|> (try termAbs)
+    <|> termVar
+
+parseApp :: Parsec String (Context, Context) (Term -> Term -> Term)
+parseApp = do
+    spaces
+    return $ TermApp Blank
 
 parens = do
     char '('
     spaces
-    t <- term
+    t <- expr
     spaces
     char ')'
     return t
 
-termZero = char '0' >> (return $ TermZero Blank)
-termTrue = string "true" >> (return $ TermTrue Blank)
-termFalse = string "false" >> (return $ TermFalse Blank)
+termAbs = do
+    char '\\'
+    varName <- endBy1 letter (spaces *> char '.')
+    spaces
 
-termIsZero = string "iszero" >> spaces >> term >>= (\t -> return $ TermIsZero Blank t)
-termSucc = string "succ" >> spaces >> term >>= (\t -> return $ TermSucc Blank t)
-termPred = string "pred" >> spaces >> term >>= (\t -> return $ TermPred Blank t)
+    -- Push new var name onto bound state stack
+    (free, bound) <- getState
+    putState $ (free, bound ++ [(varName, NameBind)])
 
-termIf = do
-    string "if"
-    spaces
-    t1 <- term
-    spaces
-    string "then"
-    spaces
-    t2 <- term
-    spaces
-    string "else"
-    spaces
-    t3 <- term
-    return $ TermIf Blank t1 t2 t3
+    t1 <- expr
+
+    -- Pop it off of the bound state stack
+    (free, bound) <- getState
+    putState $ (free, reverse $ tail $ reverse bound)
+
+    return $ TermAbs Blank varName t1
+
+termVar = do
+    varName <- many1 letter
+
+    (free, bound) <- getState
+    idx <- case getIndexFromContext bound varName of
+                (Just idx) -> return idx
+                Nothing -> do
+                    let newFree = (varName, NameBind) : free
+                    putState (newFree, bound)
+                    return $ (length newFree) + (length bound) - 1
+
+    return $ TermVar Blank idx

@@ -1,6 +1,6 @@
-name:                untyped-arith
+name:                simple-bool
 version:             0.1.0.0
-github:              "githubuser/untyped-arith"
+github:              "githubuser/simple-bool"
 license:             BSD3
 author:              "Author name here"
 maintainer:          "example@example.com"
@@ -17,7 +17,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on GitHub at <https://github.com/githubuser/untyped-arith#readme>
+description:         Please see the README on GitHub at <https://github.com/githubuser/simple-bool#readme>
 
 dependencies:
 - base >= 4.7 && < 5
@@ -27,7 +27,7 @@ library:
   source-dirs: src
 
 executables:
-  untyped-arith-exe:
+  simple-bool-exe:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
@@ -35,10 +35,10 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - untyped-arith
+    - simple-bool
 
 tests:
-  untyped-arith-test:
+  simple-bool-test:
     main:                Spec.hs
     source-dirs:         test
     ghc-options:
@@ -46,7 +46,7 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - untyped-arith
+    - simple-bool
     - QuickCheck >= 2.11.3 && < 2.12
     - HUnit >= 1.6.0.0 && < 1.7
     - tasty >= 1.1.0.1 && < 1.2

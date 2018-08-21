@@ -11,11 +11,17 @@ main = do
         [fileName] -> runFile fileName
         _ -> putStrLn "Usage: untyped-arith-exe <file-name>"
 
-
 runFile :: String -> IO ()
 runFile fileName = do
     contents <- readFile fileName
-    let forms = parseUntypedArith contents
+    let forms = parseUntypedLambda contents
     case forms of
-        (Right forms) -> mapM_ (print . eval) forms
-        _ -> putStrLn "Error in file."
+        (Right forms) -> mapM_ printForm forms
+        (Left error) -> print error
+
+printForm :: (Context, Term) -> IO ()
+printForm (ctx, term) = do
+    putStr $ showTermInContext ctx term
+    putStr " -> "
+    putStrLn $ showTermInContext ctx $ eval term
+    putStrLn ""

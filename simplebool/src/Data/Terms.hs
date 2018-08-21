@@ -1,9 +1,15 @@
 module Data.Terms (
     Term(..),
     Info(..),
-    isNumericValue,
+    Binding(..),
+    Context(..),
+    showTermInContext,
+    getIndexFromContext,
     isValue
 ) where
+
+import Data.List (findIndex)
+import Data.Maybe (isJust)
 
 data Info =
     Info {
@@ -11,55 +17,52 @@ data Info =
         column:: Int
     }
     | Blank
+    deriving (Eq)
 
 instance Show Info where
     show (Info line column) = "{ line: " ++ (show line) ++ ", column: " ++ (show column) ++ "}"
     show Blank = ""
 
 data Term = 
-    TermTrue Info
-    | TermFalse Info
-    | TermIf Info Term Term Term
-    | TermZero Info
-    | TermSucc Info Term
-    | TermPred Info Term
-    | TermIsZero Info Term
+      TermVar Info Int
+    | TermAbs Info String Term
+    | TermApp Info Term Term
+    deriving (Show, Eq)
 
-genIndent :: Int -> String
-genIndent n = take n $ repeat ' '
+data Binding = NameBind
+    deriving (Show)
 
-instance Show Term where
-    show = showTerm 0
-        where
-            showTerm _ (TermTrue i) =
-                "True" ++ show i
-            showTerm _ (TermFalse i) =
-                "False" ++ show i
-            showTerm _ (TermZero i) =
-                "0" ++ show i
-            showTerm level (TermSucc i t) =
-                "\n" ++ (genIndent level)
-                     ++ "(Succ " ++ show i ++ showTerm (level + 1) t ++ ")"
-            showTerm level (TermPred i t) =
-                "\n" ++ (genIndent level)
-                     ++ "(Pred " ++ show i ++ showTerm (level + 1) t ++ ")"
-            showTerm level (TermIsZero i t) =
-                "\n" ++ (genIndent level)
-                     ++ "(IsZero " ++ show i ++ showTerm (level + 1) t ++ ")"
-            showTerm level (TermIf i t1 t2 t3) =
-                "\n" ++ (genIndent level)
-                     ++ "(If " ++ show i ++ showTerm (level + 1) t1
-                     ++ " then " ++ showTerm (level + 1) t2
-                     ++ " else " ++ showTerm (level + 1) t3 ++ ")"
+type Context = [(String, Binding)]
 
-isNumericValue :: Term -> Bool
-isNumericValue (TermZero _) = True
-isNumericValue (TermSucc _ t) = isNumericValue t
-isNumericValue (TermPred _ t) = isNumericValue t
-isNumericValue _ = False
+contextLength :: Context -> Int
+contextLength = length
+
+indexToName :: Context -> Int -> String
+indexToName ctx n = fst $ ctx !! ((length ctx) - 1 - n)
+
+getIndexFromContext :: Context -> String -> Maybe Int
+getIndexFromContext ctx name =
+    (\idx -> (length ctx) - 1 - idx) <$>
+    findIndex (\(s, _) -> name == s) ctx
+
+hasVar :: Context -> String -> Bool
+hasVar ctx name = isJust $ getIndexFromContext ctx name
+
+pickFreshName :: Context -> String -> (Context, String)
+pickFreshName ctx x
+    | ctx `hasVar` x
+    = pickFreshName ctx (x ++ "'")
+
+    | otherwise = (ctx ++ [(x, NameBind)], x)
+
+showTermInContext :: Context -> Term -> String
+showTermInContext ctx (TermAbs _ x t1) =
+    let (ctx', x') = pickFreshName ctx x in
+        "(λ" ++ x' ++ ". " ++ showTermInContext ctx' t1 ++ ")"
+showTermInContext ctx (TermApp _ t1 t2) =
+    "(" ++ showTermInContext ctx t1 ++ " " ++ showTermInContext ctx t2 ++ ")"
+showTermInContext ctx (TermVar _ n) = indexToName ctx n
 
 isValue :: Term -> Bool
-isValue (TermFalse _) = True
-isValue (TermZero _) = True
-isValue (TermTrue _) = True
-isValue t = isNumericValue t
+isValue (TermAbs _ _ _) = True
+isValue _ = False

@@ -7,4 +7,4 @@ To run the tests, run
 To run the example program, run
 
         stack build
-        stack exec untyped-arith-exe examples/a.ua
+        stack exec untyped-lambda-exe examples/a.l
