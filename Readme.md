@@ -7,3 +7,4 @@ and Programming Languages](https://www.cis.upenn.edu/~bcpierce/tapl/).
 
 1. [Untyped Arith](untyped-arith/)
 2. [Lambda](lambda/)
+3. [Simple Bool](simplebool/)
