@@ -1,4 +1,5 @@
 module Data.Terms (
+    TermType (..),
     Term(..),
     Info(..),
     Binding(..),
@@ -23,14 +24,24 @@ instance Show Info where
     show (Info line column) = "{ line: " ++ (show line) ++ ", column: " ++ (show column) ++ "}"
     show Blank = ""
 
-data Term = 
-      TermVar Info Int
-    | TermAbs Info String Term
-    | TermApp Info Term Term
+data TermType =
+      TypeBool
+    | TypeArrow TermType TermType
     deriving (Show, Eq)
 
-data Binding = NameBind
+data Binding =
+      NameBind
+    | VarBind TermType
     deriving (Show)
+
+data Term = 
+      TermTrue Info
+    | TermFalse Info
+    | TermIf Info Term Term Term
+    | TermVar Info Int
+    | TermAbs Info String TermType Term
+    | TermApp Info Term Term
+    deriving (Show, Eq)
 
 type Context = [(String, Binding)]
 
@@ -56,13 +67,13 @@ pickFreshName ctx x
     | otherwise = (ctx ++ [(x, NameBind)], x)
 
 showTermInContext :: Context -> Term -> String
-showTermInContext ctx (TermAbs _ x t1) =
+showTermInContext ctx (TermAbs _ x ty t1) =
     let (ctx', x') = pickFreshName ctx x in
-        "(λ" ++ x' ++ ". " ++ showTermInContext ctx' t1 ++ ")"
+        "(λ" ++ x' ++ ": " ++ (show ty) ++ ". " ++ showTermInContext ctx' t1 ++ ")"
 showTermInContext ctx (TermApp _ t1 t2) =
     "(" ++ showTermInContext ctx t1 ++ " " ++ showTermInContext ctx t2 ++ ")"
 showTermInContext ctx (TermVar _ n) = indexToName ctx n
 
 isValue :: Term -> Bool
-isValue (TermAbs _ _ _) = True
+isValue (TermAbs _ _ _ _) = True
 isValue _ = False
