@@ -33,15 +33,16 @@ import Control.Monad.State.Strict
 %%
 
 Expr : '(' AppExpr ')'                         { $2 }
-     | lam ident ':' Type '.' AppExpr          {% processAbs $2 $4 $6 }
+     | lam TypedId '.' AppExpr                 { TermAbs Blank (fst $2) (snd $2) $4 }
      | if AppExpr then AppExpr else AppExpr    { TermIf Blank $2 $4 $6 }
      | true                                    { TermTrue Blank }
      | false                                   { TermFalse Blank }
      | ident                                   {% processVar $1 }
-     -- | ident                                   { TermVar Blank 0 }
 
 AppExpr : Expr Expr                            { TermApp Blank $1 $2 }
         | Expr                                 { $1 }
+
+TypedId : ident ':' Type                       {% storeAbsIdent $1 $3 }
 
 Type : Type '->' Type               { TypeArrow $1 $3 }
      | bool                         { TypeBool }
@@ -57,12 +58,12 @@ type P a = StateT PState (Either String) a
 
 parseError _ = lift $ Left "Parse Error"
 
-processAbs :: String -> TermType -> Term -> P Term
-processAbs ident tt subterm = do
+storeAbsIdent :: String -> TermType -> P (String, TermType)
+storeAbsIdent ident tt = do
     pstate <- get
     let ctx = context pstate
     put $ PState { context = ctx ++ [(ident, VarBind tt)] }
-    return $ TermAbs Blank ident tt (TermVar Blank 0)
+    return $ (ident, tt)
 
 processVar :: String -> P Term
 processVar ident = do

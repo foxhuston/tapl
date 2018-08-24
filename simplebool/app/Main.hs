@@ -5,7 +5,7 @@ import System.Environment (getArgs)
 import Lib
 
 
-str = "(\\x:Bool->Bool. if x false then true else false)"
+str = "(\\x:Bool->Bool. (\\y:Bool. if x false then y else false))"
 
 main :: IO ()
 main = do
