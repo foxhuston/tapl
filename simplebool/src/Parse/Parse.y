@@ -23,6 +23,7 @@ import Control.Monad.State.Strict
     ')'             { LexRParen }
     '.'             { LexDot }
     ':'             { LexHasType }
+    ';'             { LexSep }
     lam             { LexLambda }
     bool            { LexBool }
     '->'            { LexArrow }
@@ -31,6 +32,11 @@ import Control.Monad.State.Strict
 %error { parseError }
 
 %%
+
+Program : Expr                                 { [$1] }
+        | Expr ProgNoRep Program               { ($1 : $3) }
+
+ProgNoRep : ';'                                {% clearContext $1 }
 
 Expr : '(' AppExpr ')'                         { $2 }
      | lam TypedId '.' AppExpr                 { TermAbs Blank (fst $2) (snd $2) $4 }
@@ -58,11 +64,17 @@ type P a = StateT PState (Either String) a
 
 parseError _ = lift $ Left "Parse Error"
 
+clearContext :: a -> P a
+clearContext t = do
+    pstate <- get
+    put $ pstate { context = [] }
+    return t
+
 storeAbsIdent :: String -> TermType -> P (String, TermType)
 storeAbsIdent ident tt = do
     pstate <- get
     let ctx = context pstate
-    put $ PState { context = ctx ++ [(ident, VarBind tt)] }
+    put $ pstate { context = ctx ++ [(ident, VarBind tt)] }
     return $ (ident, tt)
 
 processVar :: String -> P Term
@@ -73,5 +85,5 @@ processVar ident = do
         Nothing -> lift $ Left ("Could not find " ++ ident ++ " in context " ++ (show ctx))
         (Just idx) -> return $ TermVar Blank idx
 
-parse l = runStateT (expr l) (PState [])
+parse l = evalStateT (expr l) (PState [])
 }
