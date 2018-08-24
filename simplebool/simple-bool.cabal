@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 34f3710ab27a0c5189759647ff65d40e1bb781c679d08845185b9218b2eafdfb
+-- hash: 269bf7de317037788267514daa342bd6e56487bd2f41ed150671b110680c4c49
 
 name:           simple-bool
 version:        0.1.0.0
@@ -38,6 +38,7 @@ library
   build-depends:
       array >=0.5.2 && <0.5.3
     , base >=4.7 && <5
+    , mtl >=2.2.2 && <2.3
   default-language: Haskell2010
 
 executable simple-bool-exe
@@ -50,6 +51,7 @@ executable simple-bool-exe
   build-depends:
       array >=0.5.2 && <0.5.3
     , base >=4.7 && <5
+    , mtl >=2.2.2 && <2.3
     , simple-bool
   default-language: Haskell2010
 
@@ -68,6 +70,7 @@ test-suite simple-bool-test
     , QuickCheck >=2.11.3 && <2.12
     , array >=0.5.2 && <0.5.3
     , base >=4.7 && <5
+    , mtl >=2.2.2 && <2.3
     , simple-bool
     , tasty >=1.1.0.1 && <1.2
     , tasty-hunit >=0.10.0.1 && <0.11

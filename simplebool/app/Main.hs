@@ -5,8 +5,12 @@ import System.Environment (getArgs)
 import Lib
 
 
+str = "(\\x:Bool->Bool. if x false then true else false)"
+
 main :: IO ()
-main = putStrLn "Hello, World!"
+main = do
+    putStrLn $ str ++ " -> "
+    print . parse $ tokenize str
 
 -- main :: IO ()
 -- main = do

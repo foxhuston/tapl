@@ -1,7 +1,9 @@
 module Lib
 (
     Context,
-    Term
+    Term,
+    parse,
+    tokenize
     -- parseSimpleBool,
     -- showTermInContext,
     -- eval
@@ -9,4 +11,5 @@ module Lib
 
 import Data.Terms
 -- import Processing.Eval
--- import Parse
+import Parse.Parse
+import Parse.Tokenize
