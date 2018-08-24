@@ -34,7 +34,7 @@ import Control.Monad.State.Strict
 %%
 
 Program : AppExpr                              { [$1] }
-        | AppExpr ';' ClearContext             { [$1] }
+        | AppExpr ClearContext ';'             { [$1] }
         | AppExpr ClearContext ';' Program     { ($1 : $4) }
 
 ClearContext : {- empty -}                     {% clearContext }
