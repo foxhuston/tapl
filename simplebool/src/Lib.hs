@@ -3,13 +3,12 @@ module Lib
     Context,
     Term,
     parse,
-    tokenize
-    -- parseSimpleBool,
-    -- showTermInContext,
-    -- eval
+    tokenize,
+    showTermInContext,
+    eval
 ) where
 
 import Data.Terms
--- import Processing.Eval
+import Processing.Eval
 import Parse.Parse
 import Parse.Tokenize

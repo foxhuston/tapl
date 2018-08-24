@@ -27,7 +27,11 @@ instance Show Info where
 data TermType =
       TypeBool
     | TypeArrow TermType TermType
-    deriving (Show, Eq)
+    deriving (Eq)
+
+instance Show TermType where
+    show (TypeBool) = "Bool"
+    show (TypeArrow t1 t2) = (show t1) ++ "->" ++ (show t2)
 
 data Binding =
       NameBind
@@ -73,7 +77,17 @@ showTermInContext ctx (TermAbs _ x ty t1) =
 showTermInContext ctx (TermApp _ t1 t2) =
     "(" ++ showTermInContext ctx t1 ++ " " ++ showTermInContext ctx t2 ++ ")"
 showTermInContext ctx (TermVar _ n) = indexToName ctx n
+showTermInContext ctx (TermIf _ t1 t2 t3) =
+    "if " ++ showTermInContext ctx t1
+          ++ " then "
+          ++ showTermInContext ctx t2
+          ++ " else "
+          ++ showTermInContext ctx t3
+showTermInContext _ (TermTrue _) = "true"
+showTermInContext _ (TermFalse _) = "false"
 
 isValue :: Term -> Bool
 isValue (TermAbs _ _ _ _) = True
-isValue _ = False
+isValue (TermTrue _)      = True
+isValue (TermFalse _)     = True
+isValue _                 = False

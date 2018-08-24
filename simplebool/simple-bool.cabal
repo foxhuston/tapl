@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 269bf7de317037788267514daa342bd6e56487bd2f41ed150671b110680c4c49
+-- hash: c2b0ff0301eb60d202ad61160502a0943d303355c9fed7dc725f2be17d8fa3fe
 
 name:           simple-bool
 version:        0.1.0.0
@@ -31,6 +31,7 @@ library
       Parse.Parse
       Parse.Tokenize
       Processing.Eval
+      Processing.Typecheck
   other-modules:
       Paths_simple_bool
   hs-source-dirs:

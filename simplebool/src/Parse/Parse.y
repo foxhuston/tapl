@@ -33,13 +33,14 @@ import Control.Monad.State.Strict
 
 %%
 
-Program : Expr                                 { [$1] }
-        | Expr ProgNoRep Program               { ($1 : $3) }
+Program : AppExpr                              { [$1] }
+        | AppExpr ';' ClearContext             { [$1] }
+        | AppExpr ClearContext ';' Program     { ($1 : $4) }
 
-ProgNoRep : ';'                                {% clearContext $1 }
+ClearContext : {- empty -}                     {% clearContext }
 
 Expr : '(' AppExpr ')'                         { $2 }
-     | lam TypedId '.' AppExpr                 { TermAbs Blank (fst $2) (snd $2) $4 }
+     | lam TypedId '.' AppExpr ClearContext    { TermAbs Blank (fst $2) (snd $2) $4 }
      | if AppExpr then AppExpr else AppExpr    { TermIf Blank $2 $4 $6 }
      | true                                    { TermTrue Blank }
      | false                                   { TermFalse Blank }
@@ -62,13 +63,13 @@ data PState = PState {
 
 type P a = StateT PState (Either String) a
 
-parseError _ = lift $ Left "Parse Error"
+parseError tok = lift $ Left ("Parse Error: " ++ show tok)
 
-clearContext :: a -> P a
-clearContext t = do
+clearContext :: P ()
+clearContext = do
     pstate <- get
     put $ pstate { context = [] }
-    return t
+    return ()
 
 storeAbsIdent :: String -> TermType -> P (String, TermType)
 storeAbsIdent ident tt = do

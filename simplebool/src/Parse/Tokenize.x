@@ -12,7 +12,6 @@ $digit = 0-9                  -- digits
 $alpha = [a-zA-Z]             -- alphabetic characters
 
 tokens :-
-
   $white+                          ;
   "--".*                           ;
   if                               { \s -> LexIf }
