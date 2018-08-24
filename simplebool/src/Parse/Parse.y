@@ -46,7 +46,7 @@ Expr : '(' AppExpr ')'                         { $2 }
      | false                                   { TermFalse Blank }
      | ident                                   {% processVar $1 }
 
-AppExpr : Expr Expr                            { TermApp Blank $1 $2 }
+AppExpr : AppExpr Expr                         { TermApp Blank $1 $2 }
         | Expr                                 { $1 }
 
 TypedId : ident ':' Type                       {% storeAbsIdent $1 $3 }
@@ -75,7 +75,7 @@ storeAbsIdent :: String -> TermType -> P (String, TermType)
 storeAbsIdent ident tt = do
     pstate <- get
     let ctx = context pstate
-    put $ pstate { context = ctx ++ [(ident, VarBind tt)] }
+    put $ pstate { context = ctx ++ [(ident, NameBind)] }
     return $ (ident, tt)
 
 processVar :: String -> P Term
