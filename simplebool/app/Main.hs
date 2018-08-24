@@ -37,9 +37,9 @@ runFile fileName = do
 
 printForm :: Term -> IO ()
 printForm term = do
-    print term
-    putStrLn "---"
     putStr $ showTermInContext [] term
-    putStr " -> "
+    putStr ": "
+    print $ typeof [] term
+    putStr "\n= "
     putStrLn $ showTermInContext [] $ eval term
-    putStrLn ""
+    putStrLn "---\n"

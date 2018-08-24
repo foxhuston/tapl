@@ -4,8 +4,10 @@ module Data.Terms (
     Info(..),
     Binding(..),
     Context(..),
+    addBinding,
     showTermInContext,
     getIndexFromContext,
+    getTypeFromContext,
     isValue
 ) where
 
@@ -59,6 +61,13 @@ getIndexFromContext :: Context -> String -> Maybe Int
 getIndexFromContext ctx name =
     (\idx -> (length ctx) - 1 - idx) <$>
     findIndex (\(s, _) -> name == s) ctx
+
+getTypeFromContext :: Context -> Int -> Maybe TermType
+getTypeFromContext ctx x =
+    (\(VarBind tt) -> tt) <$> lookup (indexToName ctx x) ctx
+
+addBinding :: Context -> String -> Binding -> Context
+addBinding ctx s b = ctx ++ [(s, b)]
 
 hasVar :: Context -> String -> Bool
 hasVar ctx name = isJust $ getIndexFromContext ctx name
