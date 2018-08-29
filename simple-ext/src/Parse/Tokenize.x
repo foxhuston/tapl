@@ -30,6 +30,9 @@ tokens :-
   ";"                              { \s -> LexSep }
   "("                              { \s -> LexLParen }
   ")"                              { \s -> LexRParen }
+  "{"                              { \s -> LexLBrace }
+  "}"                              { \s -> LexRBrace }
+  "="                              { \s -> LexEquals }
   [0-9]+                           { \s -> LexNat $ read s }
   [a-z][A-Za-z0-9_']*              { \s -> LexIdent s }
   [A-Z][A-Za-z0-9_']*              { \s -> LexTypeIdent s }
@@ -51,6 +54,9 @@ data Lexeme =
   | LexDot
   | LexLParen
   | LexRParen
+  | LexLBrace
+  | LexRBrace
+  | LexEquals
   | LexHasType
   | LexNat Integer
   | LexSucc

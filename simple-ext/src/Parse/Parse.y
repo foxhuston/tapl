@@ -25,6 +25,9 @@ import Control.Monad.State.Strict
     iszero          { LexIsZero }
     '('             { LexLParen }
     ')'             { LexRParen }
+    '{'             { LexLBrace }
+    '}'             { LexRBrace }
+    '='             { LexEquals }
     '.'             { LexDot }
     ','             { LexComma }
     ':'             { LexHasType }
@@ -47,11 +50,13 @@ ClearContext : {- empty -}                     {% clearContext }
 
 Expr : '(' AppExpr ')'                         { $2 }
      | '(' TupExpr ')'                         { TermTup Blank $2 }
+     | '{' RecordExpr '}'                      { TermRecord Blank $2 }
      | lam TypedId '.' AppExpr ClearContext    { TermAbs Blank (fst $2) (snd $2) $4 }
      | if AppExpr then AppExpr else AppExpr    { TermIf Blank $2 $4 $6 }
      | iszero AppExpr                          { TermIsZero Blank $2 }
      | succ AppExpr                            { TermSucc Blank $2 }
      | pred AppExpr                            { TermPred Blank $2 }
+     | AppExpr '.' ident                       { TermRecordProjection Blank $1 $3 }
      | AppExpr '.' nat                         { TermTupProjection Blank $1 $3 }
      | true                                    { TermTrue Blank }
      | false                                   { TermFalse Blank }
@@ -62,19 +67,26 @@ TupExpr : {- empty -}                          { [] }
         | AppExpr                              { [$1] }
         | AppExpr ',' TupExpr                  { $1 : $3 }
 
+RecordExpr : ident '=' AppExpr                 { [($1, $3)] }
+           | ident '=' AppExpr ',' RecordExpr  { ($1, $3):$5 }
+
 AppExpr : AppExpr Expr                         { TermApp Blank $1 $2 }
         | Expr                                 { $1 }
 
 TypedId : ident ':' Type                       {% storeAbsIdent $1 $3 }
 
 Type : Type '->' Type                          { TypeArrow $1 $3 }
-     | '(' TupleList ')'                       { TypeTuple $2 }
+     | '(' TupleType ')'                       { TypeTuple $2 }
+     | '{' RecordType '}'                      { TypeRecord $2 }
      | boolType                                { TypeBool }
      | natType                                 { TypeNat }
 
-TupleList : {- empty -}                        { [] }
+TupleType : {- empty -}                        { [] }
           | Type                               { [$1] }
-          | Type ',' TupleList                 { $1 : $3 }
+          | Type ',' TupleType                 { $1 : $3 }
+
+RecordType : ident ':' Type                    { [($1, $3)] }
+           | ident ':' Type ',' RecordType     { ($1, $3):$5 }
 
 {
 

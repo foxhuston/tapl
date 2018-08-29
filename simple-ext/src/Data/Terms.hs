@@ -30,6 +30,7 @@ data TermType =
       TypeBool
     | TypeNat
     | TypeTuple [TermType]
+    | TypeRecord [(String, TermType)]
     | TypeArrow TermType TermType
     deriving (Eq)
 
@@ -37,6 +38,7 @@ instance Show TermType where
     show (TypeNat)         = "Nat"
     show (TypeBool)        = "Bool"
     show (TypeTuple ts)    = "(" ++ intercalate ", " (map show ts) ++ ")"
+    show (TypeRecord ts)   = "{" ++ intercalate ", " (map (\(l, t) -> l ++ ":" ++ show t) ts) ++ "}"
     show (TypeArrow t1 t2) = (show t1) ++ "->" ++ (show t2)
 
 data Binding =
@@ -57,6 +59,8 @@ data Term =
     | TermNat Info Integer
     | TermTup Info [Term]
     | TermTupProjection Info Term Integer
+    | TermRecord Info [(String, Term)]
+    | TermRecordProjection Info Term String
     deriving (Show, Eq)
 
 type Context = [(String, Binding)]
@@ -107,6 +111,8 @@ showTermInContext ctx (TermPred _ t1) = "(pred " ++ showTermInContext ctx t1 ++ 
 showTermInContext ctx (TermIsZero _ t1) = "(iszero " ++ showTermInContext ctx t1 ++ ")"
 showTermInContext ctx (TermTup _ ts) = "(" ++ intercalate ", " (map (showTermInContext ctx) ts) ++ ")"
 showTermInContext ctx (TermTupProjection _ t n) = showTermInContext ctx t ++ "." ++ show n
+showTermInContext ctx (TermRecord _ ts) = "{" ++ intercalate ", " (map (\(l, t) -> l ++ "=" ++ showTermInContext ctx t) ts) ++ "}"
+showTermInContext ctx (TermRecordProjection _ t l) = showTermInContext ctx t ++ "." ++ l
 showTermInContext _ (TermNat _ n) = show n
 showTermInContext _ (TermTrue _)  = "true"
 showTermInContext _ (TermFalse _) = "false"
@@ -118,4 +124,5 @@ isValue (TermFalse _)     = True
 isValue (TermNat _ _)     = True
 isValue (TermTup _ [])    = True
 isValue (TermTup _ ts)    = all isValue ts
+isValue (TermRecord _ ts) = all (isValue.snd) ts
 isValue _                 = False

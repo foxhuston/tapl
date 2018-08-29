@@ -1,1 +1,7 @@
-();
+{cost=30, partno=12345};
+
+(\x:{cost:Nat, partno:Nat}. x.cost);
+
+(\x:{cost:Nat, partno:Nat}. x.cost) {cost=30, partno=12345};
+
+-- {cost=30, partno=2903409}.seven

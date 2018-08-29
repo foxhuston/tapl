@@ -2,6 +2,8 @@ module Processing.Typecheck (
     typeof
 ) where
 
+import Data.Bifunctor
+
 import Data.Terms
 
 
@@ -47,6 +49,15 @@ typeof ctx term
                 typeT2
             else error "Branches of Conditional have different Types"
       else error "Guard of conditional not a boolean"
+
+    | TermRecord _ ts <- term
+    = TypeRecord $ map (second $ typeof ctx) ts
+
+    | TermRecordProjection _ t1 l <- term
+    , (TypeRecord ts) <- typeof ctx t1
+    = case lookup l ts of
+        Nothing -> error ("Label '" ++ l ++ "' is not a member of record")
+        Just t -> t
 
     | TermVar _ n <- term
     , (Just tv) <- getTypeFromContext ctx n
