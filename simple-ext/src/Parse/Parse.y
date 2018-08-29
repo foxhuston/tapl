@@ -22,6 +22,7 @@ import Control.Monad.State.Strict
     nat             { LexNat $$ }
     succ            { LexSucc }
     pred            { LexPred }
+    iszero          { LexIsZero }
     '('             { LexLParen }
     ')'             { LexRParen }
     '.'             { LexDot }
@@ -46,6 +47,7 @@ ClearContext : {- empty -}                     {% clearContext }
 Expr : '(' AppExpr ')'                         { $2 }
      | lam TypedId '.' AppExpr ClearContext    { TermAbs Blank (fst $2) (snd $2) $4 }
      | if AppExpr then AppExpr else AppExpr    { TermIf Blank $2 $4 $6 }
+     | iszero AppExpr                          { TermIsZero Blank $2 }
      | succ AppExpr                            { TermSucc Blank $2 }
      | pred AppExpr                            { TermPred Blank $2 }
      | true                                    { TermTrue Blank }

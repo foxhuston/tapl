@@ -51,6 +51,7 @@ data Term =
     | TermApp Info Term Term
     | TermSucc Info Term
     | TermPred Info Term
+    | TermIsZero Info Term
     | TermNat Info Integer
     deriving (Show, Eq)
 
@@ -97,11 +98,16 @@ showTermInContext ctx (TermIf _ t1 t2 t3) =
           ++ showTermInContext ctx t2
           ++ " else "
           ++ showTermInContext ctx t3
-showTermInContext _ (TermTrue _) = "true"
+showTermInContext ctx (TermSucc _ t1) = "(succ " ++ showTermInContext ctx t1 ++ ")"
+showTermInContext ctx (TermPred _ t1) = "(pred " ++ showTermInContext ctx t1 ++ ")"
+showTermInContext ctx (TermIsZero _ t1) = "(iszero " ++ showTermInContext ctx t1 ++ ")"
+showTermInContext _ (TermNat _ n) = show n
+showTermInContext _ (TermTrue _)  = "true"
 showTermInContext _ (TermFalse _) = "false"
 
 isValue :: Term -> Bool
 isValue (TermAbs _ _ _ _) = True
 isValue (TermTrue _)      = True
 isValue (TermFalse _)     = True
+isValue (TermNat _ _)     = True
 isValue _                 = False

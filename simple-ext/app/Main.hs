@@ -30,20 +30,16 @@ main = do
 runFile :: String -> IO ()
 runFile fileName = do
     contents <- readFile fileName
-    let toks = tokenize contents
-    print toks
-    let parse' = parse toks
-    print parse'
---     let forms = parse . tokenize $ contents
---     case forms of
---         (Right forms) -> mapM_ printForm forms
---         (Left error) -> putStrLn error
+    let forms = parse . tokenize $ contents
+    case forms of
+        (Right forms) -> mapM_ printForm forms
+        (Left error) -> putStrLn error
 
--- printForm :: Term -> IO ()
--- printForm term = do
---     putStr $ showTermInContext [] term
---     putStr ": "
---     print $ typeof [] term
---     putStr "\n= "
---     putStrLn $ showTermInContext [] $ eval term
---     putStrLn "---\n"
+printForm :: Term -> IO ()
+printForm term = do
+    putStr $ showTermInContext [] term
+    putStr ": "
+    print $ typeof [] term
+    putStr "\n= "
+    putStrLn $ showTermInContext [] $ eval term
+    putStrLn "---\n"

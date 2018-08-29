@@ -13,6 +13,24 @@ typeof ctx term
     | TermFalse _ <- term
     = TypeBool
 
+    | TermNat _ _ <- term
+    = TypeNat
+
+    | TermSucc _ t1 <- term
+    = if typeof ctx t1 == TypeNat then
+        TypeNat
+      else error "Subterm of succ must be type Nat"
+
+    | TermPred _ t1 <- term
+    = if typeof ctx t1 == TypeNat then
+        TypeNat
+      else error "Subterm of pred must be type Nat"
+    
+    | TermIsZero _ t1 <- term
+    = if typeof ctx t1 == TypeNat then
+        TypeBool
+      else error "Subterm of iszero must be type Nat"
+
     | TermIf _ t1 t2 t3 <- term
     = if typeof ctx t1 == TypeBool then
         let typeT2 = typeof ctx t2 in

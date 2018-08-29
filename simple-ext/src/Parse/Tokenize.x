@@ -21,6 +21,7 @@ tokens :-
   false                            { \s -> LexFalse }
   succ                             { \s -> LexSucc }
   pred                             { \s -> LexPred }
+  iszero                           { \s -> LexIsZero }
   "->"                             { \s -> LexArrow }
   "\"                              { \s -> LexLambda }
   "."                              { \s -> LexDot }
@@ -52,6 +53,7 @@ data Lexeme =
   | LexNat Integer
   | LexSucc
   | LexPred
+  | LexIsZero
   | LexIdent String
   | LexTypeIdent String
   deriving (Eq,Show)
