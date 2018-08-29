@@ -1,0 +1,5 @@
+(\x:Bool. x) false;
+
+\x:Nat. succ x;
+
+succ succ succ 3;

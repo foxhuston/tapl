@@ -19,13 +19,17 @@ import Control.Monad.State.Strict
     true            { LexTrue }
     false           { LexFalse }
     ident           { LexIdent $$ }
+    nat             { LexNat $$ }
+    succ            { LexSucc }
+    pred            { LexPred }
     '('             { LexLParen }
     ')'             { LexRParen }
     '.'             { LexDot }
     ':'             { LexHasType }
     ';'             { LexSep }
     lam             { LexLambda }
-    bool            { LexBool }
+    boolType        { LexTypeIdent "Bool" }
+    natType         { LexTypeIdent "Nat" }
     '->'            { LexArrow }
 
 %monad { P }
@@ -42,8 +46,11 @@ ClearContext : {- empty -}                     {% clearContext }
 Expr : '(' AppExpr ')'                         { $2 }
      | lam TypedId '.' AppExpr ClearContext    { TermAbs Blank (fst $2) (snd $2) $4 }
      | if AppExpr then AppExpr else AppExpr    { TermIf Blank $2 $4 $6 }
+     | succ AppExpr                            { TermSucc Blank $2 }
+     | pred AppExpr                            { TermPred Blank $2 }
      | true                                    { TermTrue Blank }
      | false                                   { TermFalse Blank }
+     | nat                                     { TermNat Blank $1 }
      | ident                                   {% processVar $1 }
 
 AppExpr : AppExpr Expr                         { TermApp Blank $1 $2 }
@@ -51,8 +58,9 @@ AppExpr : AppExpr Expr                         { TermApp Blank $1 $2 }
 
 TypedId : ident ':' Type                       {% storeAbsIdent $1 $3 }
 
-Type : Type '->' Type               { TypeArrow $1 $3 }
-     | bool                         { TypeBool }
+Type : Type '->' Type                          { TypeArrow $1 $3 }
+     | boolType                                { TypeBool }
+     | natType                                 { TypeNat }
 
 {
 

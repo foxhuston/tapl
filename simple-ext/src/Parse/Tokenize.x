@@ -19,6 +19,8 @@ tokens :-
   else                             { \s -> LexElse }
   true                             { \s -> LexTrue }
   false                            { \s -> LexFalse }
+  succ                             { \s -> LexSucc }
+  pred                             { \s -> LexPred }
   "->"                             { \s -> LexArrow }
   "\"                              { \s -> LexLambda }
   "."                              { \s -> LexDot }
@@ -26,8 +28,9 @@ tokens :-
   ";"                              { \s -> LexSep }
   "("                              { \s -> LexLParen }
   ")"                              { \s -> LexRParen }
-  [Bb]"ool"                        { \s -> LexBool }
-  $alpha [$alpha $digit \_ \']*    { \s -> LexIdent s }
+  [0-9]+                           { \s -> LexNat $ read s }
+  [a-z][A-Za-z0-9_']*              { \s -> LexIdent s }
+  [A-Z][A-Za-z0-9_']*              { \s -> LexTypeIdent s }
 
 {
 -- Each action has type :: String -> Token
@@ -46,8 +49,11 @@ data Lexeme =
   | LexLParen
   | LexRParen
   | LexHasType
-  | LexBool
+  | LexNat Integer
+  | LexSucc
+  | LexPred
   | LexIdent String
+  | LexTypeIdent String
   deriving (Eq,Show)
 
 tokenize = alexScanTokens

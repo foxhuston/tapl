@@ -28,11 +28,13 @@ instance Show Info where
 
 data TermType =
       TypeBool
+    | TypeNat
     | TypeArrow TermType TermType
     deriving (Eq)
 
 instance Show TermType where
-    show (TypeBool) = "Bool"
+    show (TypeNat)         = "Nat"
+    show (TypeBool)        = "Bool"
     show (TypeArrow t1 t2) = (show t1) ++ "->" ++ (show t2)
 
 data Binding =
@@ -47,6 +49,9 @@ data Term =
     | TermVar Info Int
     | TermAbs Info String TermType Term
     | TermApp Info Term Term
+    | TermSucc Info Term
+    | TermPred Info Term
+    | TermNat Info Integer
     deriving (Show, Eq)
 
 type Context = [(String, Binding)]
