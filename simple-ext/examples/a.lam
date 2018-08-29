@@ -1,7 +1,17 @@
 (\x:Bool. x) false;
 
+(\x:Nat. x) 3;
+
 \x:Nat. succ x;
+
+\y:Nat. iszero y;
+
+(\y:Nat. iszero y) 3;
 
 succ succ succ 3;
 
 if iszero 3 then 4 else 0;
+
+(\x:Nat. if iszero pred x then 10 else succ x) 1;
+
+(\x:Nat. if iszero pred x then 10 else succ x) 2;
