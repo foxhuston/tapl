@@ -26,6 +26,7 @@ import Control.Monad.State.Strict
     '('             { LexLParen }
     ')'             { LexRParen }
     '.'             { LexDot }
+    ','             { LexComma }
     ':'             { LexHasType }
     ';'             { LexSep }
     lam             { LexLambda }
@@ -45,15 +46,21 @@ Program : AppExpr                              { [$1] }
 ClearContext : {- empty -}                     {% clearContext }
 
 Expr : '(' AppExpr ')'                         { $2 }
+     | '(' TupExpr ')'                         { TermTup Blank $2 }
      | lam TypedId '.' AppExpr ClearContext    { TermAbs Blank (fst $2) (snd $2) $4 }
      | if AppExpr then AppExpr else AppExpr    { TermIf Blank $2 $4 $6 }
      | iszero AppExpr                          { TermIsZero Blank $2 }
      | succ AppExpr                            { TermSucc Blank $2 }
      | pred AppExpr                            { TermPred Blank $2 }
+     | AppExpr '.' nat                         { TermTupProjection Blank $1 $3 }
      | true                                    { TermTrue Blank }
      | false                                   { TermFalse Blank }
      | nat                                     { TermNat Blank $1 }
      | ident                                   {% processVar $1 }
+
+TupExpr : {- empty -}                          { [] }
+        | AppExpr                              { [$1] }
+        | AppExpr ',' TupExpr                  { $1 : $3 }
 
 AppExpr : AppExpr Expr                         { TermApp Blank $1 $2 }
         | Expr                                 { $1 }
@@ -61,8 +68,13 @@ AppExpr : AppExpr Expr                         { TermApp Blank $1 $2 }
 TypedId : ident ':' Type                       {% storeAbsIdent $1 $3 }
 
 Type : Type '->' Type                          { TypeArrow $1 $3 }
+     | '(' TupleList ')'                       { TypeTuple $2 }
      | boolType                                { TypeBool }
      | natType                                 { TypeNat }
+
+TupleList : {- empty -}                        { [] }
+          | Type                               { [$1] }
+          | Type ',' TupleList                 { $1 : $3 }
 
 {
 

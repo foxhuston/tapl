@@ -11,7 +11,7 @@ module Data.Terms (
     isValue
 ) where
 
-import Data.List (findIndex)
+import Data.List (findIndex, intercalate)
 import Data.Maybe (isJust)
 
 data Info =
@@ -29,12 +29,14 @@ instance Show Info where
 data TermType =
       TypeBool
     | TypeNat
+    | TypeTuple [TermType]
     | TypeArrow TermType TermType
     deriving (Eq)
 
 instance Show TermType where
     show (TypeNat)         = "Nat"
     show (TypeBool)        = "Bool"
+    show (TypeTuple ts)    = "(" ++ intercalate ", " (map show ts) ++ ")"
     show (TypeArrow t1 t2) = (show t1) ++ "->" ++ (show t2)
 
 data Binding =
@@ -53,6 +55,8 @@ data Term =
     | TermPred Info Term
     | TermIsZero Info Term
     | TermNat Info Integer
+    | TermTup Info [Term]
+    | TermTupProjection Info Term Integer
     deriving (Show, Eq)
 
 type Context = [(String, Binding)]
@@ -101,6 +105,8 @@ showTermInContext ctx (TermIf _ t1 t2 t3) =
 showTermInContext ctx (TermSucc _ t1) = "(succ " ++ showTermInContext ctx t1 ++ ")"
 showTermInContext ctx (TermPred _ t1) = "(pred " ++ showTermInContext ctx t1 ++ ")"
 showTermInContext ctx (TermIsZero _ t1) = "(iszero " ++ showTermInContext ctx t1 ++ ")"
+showTermInContext ctx (TermTup _ ts) = "(" ++ intercalate ", " (map (showTermInContext ctx) ts) ++ ")"
+showTermInContext ctx (TermTupProjection _ t n) = showTermInContext ctx t ++ "." ++ show n
 showTermInContext _ (TermNat _ n) = show n
 showTermInContext _ (TermTrue _)  = "true"
 showTermInContext _ (TermFalse _) = "false"
@@ -110,4 +116,6 @@ isValue (TermAbs _ _ _ _) = True
 isValue (TermTrue _)      = True
 isValue (TermFalse _)     = True
 isValue (TermNat _ _)     = True
+isValue (TermTup _ [])    = True
+isValue (TermTup _ ts)    = all isValue ts
 isValue _                 = False

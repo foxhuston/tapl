@@ -31,6 +31,15 @@ typeof ctx term
         TypeBool
       else error "Subterm of iszero must be type Nat"
 
+    | TermTup _ ts <- term
+    = TypeTuple $ map (typeof ctx) ts
+
+    | TermTupProjection _ t1 n <- term
+    , (TypeTuple ts) <- typeof ctx t1
+    = if n < 0 || n >= (fromIntegral $ length ts)
+        then error "Tuple index out of bounds of the tuple"
+        else ts !! (fromIntegral n)
+
     | TermIf _ t1 t2 t3 <- term
     = if typeof ctx t1 == TypeBool then
         let typeT2 = typeof ctx t2 in

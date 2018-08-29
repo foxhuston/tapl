@@ -30,7 +30,10 @@ main = do
 runFile :: String -> IO ()
 runFile fileName = do
     contents <- readFile fileName
-    let forms = parse . tokenize $ contents
+    let toks = tokenize contents
+    -- print toks
+    let forms = parse toks
+    -- print forms
     case forms of
         (Right forms) -> mapM_ printForm forms
         (Left error) -> putStrLn error

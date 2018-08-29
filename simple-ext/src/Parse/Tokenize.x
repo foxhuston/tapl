@@ -25,6 +25,7 @@ tokens :-
   "->"                             { \s -> LexArrow }
   "\"                              { \s -> LexLambda }
   "."                              { \s -> LexDot }
+  ","                              { \s -> LexComma }
   ":"                              { \s -> LexHasType }
   ";"                              { \s -> LexSep }
   "("                              { \s -> LexLParen }
@@ -45,6 +46,7 @@ data Lexeme =
   | LexFalse
   | LexLambda
   | LexSep
+  | LexComma
   | LexArrow
   | LexDot
   | LexLParen
