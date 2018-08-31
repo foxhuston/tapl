@@ -1,6 +1,7 @@
 module Data.Terms (
     TermType (..),
     Term(..),
+    MatchPattern(..),
     Info(..),
     Binding(..),
     Context(..),
@@ -11,8 +12,12 @@ module Data.Terms (
     isValue
 ) where
 
-import Data.List (findIndex, intercalate)
+import Data.List (findIndex, intercalate, foldl')
+import Data.Bifunctor (second)
 import Data.Maybe (isJust)
+
+showRecord :: Show s => String -> [(String, s)] -> String
+showRecord sep ts = "{" ++ intercalate ", " (map (\(l, s) -> l ++ sep ++ (show s)) ts) ++ "}"
 
 data Info =
     Info {
@@ -27,7 +32,8 @@ instance Show Info where
     show Blank = ""
 
 data TermType =
-      TypeBool
+      TypeUnspecified
+    | TypeBool
     | TypeNat
     | TypeTuple [TermType]
     | TypeRecord [(String, TermType)]
@@ -38,7 +44,7 @@ instance Show TermType where
     show (TypeNat)         = "Nat"
     show (TypeBool)        = "Bool"
     show (TypeTuple ts)    = "(" ++ intercalate ", " (map show ts) ++ ")"
-    show (TypeRecord ts)   = "{" ++ intercalate ", " (map (\(l, t) -> l ++ ":" ++ show t) ts) ++ "}"
+    show (TypeRecord ts)   = showRecord ":" ts
     show (TypeArrow t1 t2) = (show t1) ++ "->" ++ (show t2)
 
 data Binding =
@@ -46,10 +52,20 @@ data Binding =
     | VarBind TermType
     deriving (Show)
 
+data MatchPattern =
+      MatchVar String
+    | MatchRecord [(String, MatchPattern)]
+    deriving (Eq)
+
+instance Show MatchPattern where
+    show (MatchVar s) = s
+    show (MatchRecord rs) = showRecord "=" rs
+
 data Term = 
       TermTrue Info
     | TermFalse Info
     | TermIf Info Term Term Term
+    | TermLet Info MatchPattern Term Term
     | TermVar Info Int
     | TermAbs Info String TermType Term
     | TermApp Info Term Term
@@ -93,6 +109,15 @@ pickFreshName ctx x
 
     | otherwise = (ctx ++ [(x, NameBind)], x)
 
+pickFreshNames :: Context -> [String] -> (Context, [String])
+pickFreshNames ctx xs = foldl' (\(ctx, names) name ->
+    let (ctx', name') = pickFreshName ctx name
+    in (ctx', name':names)) (ctx, []) xs
+
+getMatchNames :: MatchPattern -> [String]
+getMatchNames (MatchVar x) = [x]
+getMatchNames (MatchRecord (r:rs)) = getMatchNames (snd r) ++ (concat $ map (getMatchNames . snd) rs)
+
 showTermInContext :: Context -> Term -> String
 showTermInContext ctx (TermAbs _ x ty t1) =
     let (ctx', x') = pickFreshName ctx x in
@@ -111,8 +136,12 @@ showTermInContext ctx (TermPred _ t1) = "(pred " ++ showTermInContext ctx t1 ++ 
 showTermInContext ctx (TermIsZero _ t1) = "(iszero " ++ showTermInContext ctx t1 ++ ")"
 showTermInContext ctx (TermTup _ ts) = "(" ++ intercalate ", " (map (showTermInContext ctx) ts) ++ ")"
 showTermInContext ctx (TermTupProjection _ t n) = showTermInContext ctx t ++ "." ++ show n
-showTermInContext ctx (TermRecord _ ts) = "{" ++ intercalate ", " (map (\(l, t) -> l ++ "=" ++ showTermInContext ctx t) ts) ++ "}"
+showTermInContext ctx (TermRecord _ ts) = showRecord "=" $ map (second (showTermInContext ctx)) ts
 showTermInContext ctx (TermRecordProjection _ t l) = showTermInContext ctx t ++ "." ++ l
+showTermInContext ctx (TermLet _ m t1 t2) =
+    let (ctx', xs') = pickFreshNames ctx $ getMatchNames m
+    in "(let " ++ show m ++ " = " ++ showTermInContext ctx' t1
+       ++ "\nin " ++ showTermInContext ctx' t2 ++ ")"
 showTermInContext _ (TermNat _ n) = show n
 showTermInContext _ (TermTrue _)  = "true"
 showTermInContext _ (TermFalse _) = "false"

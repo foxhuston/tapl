@@ -6,6 +6,21 @@ import Data.Bifunctor
 
 import Data.Terms
 
+getRecordType :: [(String, MatchPattern)] -> [(String, TermType)] -> [Maybe (MatchPattern, TermType)]
+getRecordType [] _ = []
+getRecordType ((label, pattern):ms) ts =
+    (do
+        ty <- (lookup label ts)
+        return (pattern, ty)
+    ):getRecordType ms ts
+
+matchType :: MatchPattern -> TermType -> Context
+matchType (MatchVar s) t = [(s, VarBind t)]
+matchType (MatchRecord ps) (TypeRecord ts) =
+    case sequence $ getRecordType ps ts of
+        Nothing -> error "Invalid Match!"
+        (Just mp) -> concat $ map (uncurry matchType) mp
+matchType _ _ = error "Invalid Match!"
 
 typeof :: Context -> Term -> TermType
 typeof ctx term
@@ -58,6 +73,11 @@ typeof ctx term
     = case lookup l ts of
         Nothing -> error ("Label '" ++ l ++ "' is not a member of record")
         Just t -> t
+
+    | TermLet _ p t1 t2 <- term
+    = let ty1 = typeof ctx t1
+          ctx' = matchType p ty1
+      in typeof (ctx ++ ctx') t2
 
     | TermVar _ n <- term
     , (Just tv) <- getTypeFromContext ctx n

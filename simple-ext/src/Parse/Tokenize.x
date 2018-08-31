@@ -22,6 +22,8 @@ tokens :-
   succ                             { \s -> LexSucc }
   pred                             { \s -> LexPred }
   iszero                           { \s -> LexIsZero }
+  let                              { \s -> LexLet }
+  in                               { \s -> LexIn }
   "->"                             { \s -> LexArrow }
   "\"                              { \s -> LexLambda }
   "."                              { \s -> LexDot }
@@ -52,6 +54,8 @@ data Lexeme =
   | LexComma
   | LexArrow
   | LexDot
+  | LexLet
+  | LexIn
   | LexLParen
   | LexRParen
   | LexLBrace
