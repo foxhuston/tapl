@@ -9,6 +9,7 @@ module Data.Terms (
     showTermInContext,
     getIndexFromContext,
     getTypeFromContext,
+    getRecordType,
     isValue
 ) where
 
@@ -117,6 +118,15 @@ pickFreshNames ctx xs = foldl' (\(ctx, names) name ->
 getMatchNames :: MatchPattern -> [String]
 getMatchNames (MatchVar x) = [x]
 getMatchNames (MatchRecord (r:rs)) = getMatchNames (snd r) ++ (concat $ map (getMatchNames . snd) rs)
+
+
+getRecordType :: [(String, MatchPattern)] -> [(String, a)] -> [Maybe (MatchPattern, a)]
+getRecordType [] _ = []
+getRecordType ((label, pattern):ms) ts =
+    (do
+        ty <- (lookup label ts)
+        return (pattern, ty)
+    ):getRecordType ms ts
 
 showTermInContext :: Context -> Term -> String
 showTermInContext ctx (TermAbs _ x ty t1) =

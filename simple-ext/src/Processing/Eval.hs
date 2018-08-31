@@ -36,6 +36,7 @@ termSub :: Int -> Term -> Term -> Term
 termSub j s t1@(TermVar _ k)              = if j == k then s else t1
 termSub j s (TermAbs i h ty t1)           = TermAbs i h ty $ termSub (j + 1) (termShift 1 s) t1
 termSub j s (TermApp i t1 t2)             = TermApp i (termSub j s t1) (termSub j s t2)
+termSub j s (TermLet i p t1 t2)           = TermLet i p (termSub j s t1) (termSub j s t2)
 termSub j s (TermIf i t1 t2 t3)           = TermIf i (termSub j s t1) (termSub j s t2) (termSub j s t3)
 termSub j s (TermIsZero i t1)             = TermIsZero i (termSub j s t1)
 termSub j s (TermSucc i t1)               = TermSucc i (termSub j s t1)
@@ -47,6 +48,29 @@ termSub j s (TermRecordProjection i t1 l) = TermRecordProjection i (termSub j s 
 termSub _ _ (TermTrue i)                  = TermTrue i
 termSub _ _ (TermFalse i)                 = TermFalse i
 termSub _ _ t@(TermNat _ _)               = t
+
+
+matchContext :: MatchPattern -> Term -> [(String, Term)]
+matchContext (MatchVar s) t = [(s, t)]
+matchContext (MatchRecord ps) (TermRecord _ ts) =
+    case sequence $ getRecordType ps ts of
+        Nothing -> error "Invalid Match!"
+        (Just mp) -> concat $ map (uncurry matchContext) mp
+matchContext _ _ = error "Invalid Match!"
+
+numberContext :: [(String, Term)] -> [(Int, Term)]
+numberContext xs = zipWith (\n p -> first (const n) p) [0..] xs
+
+getMatchContext :: MatchPattern -> Term -> [(Int, Term)]
+getMatchContext p t = numberContext $ matchContext p t
+
+letSub :: MatchPattern -> Term -> Term -> Term
+letSub p v1 t2 = let
+    ctx' = getMatchContext p v1
+    in walk ctx' t2
+    where
+        walk [] t = t
+        walk ((j, s):cs) t = walk cs $ termSub j s t
 
 eval1 :: Term -> Maybe Term
 eval1 term
@@ -140,6 +164,15 @@ eval1 term
     | (TermRecordProjection i t1 l) <- term
     , (Just t1') <- eval1 t1
     = Just $ TermRecordProjection i t1' l
+
+    -- Let is like a binder from left to right, without the actual binding...
+    | (TermLet i m v1 t2) <- term
+    , isValue v1
+    = Just $ letSub m v1 t2
+
+    | (TermLet i m t1 t2) <- term
+    , (Just t1') <- eval1 t1
+    = Just $ TermLet i m t1' t2
 
     | _ <- term
     = Nothing

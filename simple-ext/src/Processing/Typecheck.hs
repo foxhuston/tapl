@@ -6,14 +6,6 @@ import Data.Bifunctor
 
 import Data.Terms
 
-getRecordType :: [(String, MatchPattern)] -> [(String, TermType)] -> [Maybe (MatchPattern, TermType)]
-getRecordType [] _ = []
-getRecordType ((label, pattern):ms) ts =
-    (do
-        ty <- (lookup label ts)
-        return (pattern, ty)
-    ):getRecordType ms ts
-
 matchType :: MatchPattern -> TermType -> Context
 matchType (MatchVar s) t = [(s, VarBind t)]
 matchType (MatchRecord ps) (TypeRecord ts) =

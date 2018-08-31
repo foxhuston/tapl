@@ -7,6 +7,8 @@ import Parse.Tokenize
 import Data.Terms
 import Control.Monad.State.Strict
 
+import Debug.Trace
+
 }
 
 %name expr
@@ -50,6 +52,7 @@ Program : AppExpr                                           { [$1] }
 
 ClearContext : {- empty -}                                  {% clearContext }
 PopContext : {- empty -}                                    {% popContext }
+PushMatchIdent : {- empty -}                                {% pushNewMatchIdent }
 
 AppExpr : AppExpr Expr                                      { TermApp Blank $1 $2 }
         | Expr                                              { $1 }
@@ -59,7 +62,9 @@ Expr : '(' AppExpr ')'                                      { $2 }
      | '{' RecordExpr '}'                                   { TermRecord Blank $2 }
      | lam TypedId '.' AppExpr PopContext                   { TermAbs Blank (fst $2) (snd $2) $4 }
      | if AppExpr then AppExpr else AppExpr                 { TermIf Blank $2 $4 $6 }
-     | let MatchExpr '=' AppExpr in AppExpr                 { TermLet Blank $2 $4 $6 }
+     | let PushMatchIdent MatchExpr
+        '=' AppExpr in AppExpr
+        PopContext                                          { TermLet Blank $3 $5 $7 }
      | iszero AppExpr                                       { TermIsZero Blank $2 }
      | succ AppExpr                                         { TermSucc Blank $2 }
      | pred AppExpr                                         { TermPred Blank $2 }
@@ -78,7 +83,7 @@ RecordExpr : ident '=' AppExpr                              { [($1, $3)] }
            | ident '=' AppExpr ',' RecordExpr               { ($1, $3):$5 }
 
 MatchExpr : '{' RecordPattern '}'                           { MatchRecord $2 }
-          | ident                                           {% (storeAbsIdent $1 TypeUnspecified) >> return (MatchVar $1) }
+          | ident                                           {% (storeMatchIdent $1) >> return (MatchVar $1) }
 
 RecordPattern : ident '=' MatchExpr                         { [($1, $3)] }
               | ident '=' MatchExpr ',' RecordPattern       { ($1, $3):$5 }
@@ -101,7 +106,7 @@ RecordType : ident ':' Type                                 { [($1, $3)] }
 {
 
 data PState = PState {
-        context :: Context
+        context :: [Context]
     }
     deriving (Show)
 
@@ -118,7 +123,7 @@ clearContext = do
 popContext :: P ()
 popContext = do
     pstate <- get
-    let (c:cs) = context pstate
+    let cs = init $ context pstate
     put $ pstate { context = cs }
     return ()
 
@@ -126,13 +131,28 @@ storeAbsIdent :: String -> TermType -> P (String, TermType)
 storeAbsIdent ident tt = do
     pstate <- get
     let ctx = context pstate
-    put $ pstate { context = ctx ++ [(ident, NameBind)] }
+    put $ pstate { context = ctx ++ [[(ident, NameBind)]] }
     return $ (ident, tt)
+
+pushNewMatchIdent :: P ()
+pushNewMatchIdent = do
+    pstate <- trace "PushNewMatchIdent" get
+    let ctx = context pstate
+    put $ pstate { context = ctx ++ [[]] }
+
+storeMatchIdent :: String -> P ()
+storeMatchIdent ident = do
+    pstate <- get
+    let ctx = context pstate
+    let currentMatchCtx = last ctx
+    let ctx' = init ctx
+
+    put $ pstate { context = ctx' ++ [currentMatchCtx ++ [(ident, NameBind)]] }
 
 processVar :: String -> P Term
 processVar ident = do
     pstate <- get
-    let ctx = context pstate
+    let ctx = concat $ traceShowId $ context pstate
     case getIndexFromContext ctx ident of
         Nothing -> lift $ Left ("Could not find " ++ ident ++ " in context " ++ (show ctx))
         (Just idx) -> return $ TermVar Blank idx
