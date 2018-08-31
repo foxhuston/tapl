@@ -6,15 +6,12 @@
 
 -- {cost=30, partno=2903409}.seven
 
-let {cost=x} = {cost=30, partno=12345}
-in succ succ succ x;
+-- let x = (\x:Bool. \y:Nat. succ y)
+-- in x false 3
+
 
 -- let {cost=x} = {cost=30, partno=12345}
--- in (\y: x)
-
--- let {cost=x} = {cost=30, partno=12345}
--- in (\y: x) 3
-
+-- in succ succ succ x;
 
 let mkPart=(\c:Nat. \p:Nat. {cost=c, partNo=p})
 in let {cost=x} = mkPart 2 345

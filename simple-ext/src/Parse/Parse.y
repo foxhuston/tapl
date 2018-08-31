@@ -1,4 +1,6 @@
 {
+{-# LANGUAGE NamedFieldPuns #-}
+
 module Parse.Parse (
     parse
 ) where
@@ -52,35 +54,45 @@ Program : AppExpr                                           { [$1] }
 
 ClearContext : {- empty -}                                  {% clearContext }
 PopContext : {- empty -}                                    {% popContext }
-PushMatchIdent : {- empty -}                                {% pushNewMatchIdent }
+WriteMatchContext : {- empty -}                             {% writeMatchContext }
 
 AppExpr : AppExpr Expr                                      { TermApp Blank $1 $2 }
         | Expr                                              { $1 }
 
 Expr : '(' AppExpr ')'                                      { $2 }
-     | '(' TupExpr ')'                                      { TermTup Blank $2 }
-     | '{' RecordExpr '}'                                   { TermRecord Blank $2 }
      | lam TypedId '.' AppExpr PopContext                   { TermAbs Blank (fst $2) (snd $2) $4 }
      | if AppExpr then AppExpr else AppExpr                 { TermIf Blank $2 $4 $6 }
-     | let PushMatchIdent MatchExpr
-        '=' AppExpr in AppExpr
-        PopContext                                          { TermLet Blank $3 $5 $7 }
+     | let MatchExpr
+        '=' AppExpr in WriteMatchContext AppExpr
+        PopContext                                          { TermLet Blank $2 $4 $7 }
      | iszero AppExpr                                       { TermIsZero Blank $2 }
      | succ AppExpr                                         { TermSucc Blank $2 }
      | pred AppExpr                                         { TermPred Blank $2 }
-     | AppExpr '.' ident                                    { TermRecordProjection Blank $1 $3 }
-     | AppExpr '.' nat                                      { TermTupProjection Blank $1 $3 }
+     | RecordExpr '.' ident                                 { TermRecordProjection Blank $1 $3 }
+     | TupExpr '.' nat                                      { TermTupProjection Blank $1 $3 }
+     | VarExpr '.' ident                                    { TermRecordProjection Blank $1 $3 }
+     | VarExpr '.' nat                                      { TermTupProjection Blank $1 $3 }
+     -- Constants
+     | TupExpr                                              { $1 }
+     | RecordExpr                                           { $1 }
      | true                                                 { TermTrue Blank }
      | false                                                { TermFalse Blank }
      | nat                                                  { TermNat Blank $1 }
-     | ident                                                {% processVar $1 }
+     | VarExpr                                              { $1 }
 
-TupExpr : {- empty -}                                       { [] }
-        | AppExpr                                           { [$1] }
-        | AppExpr ',' TupExpr                               { $1 : $3 }
 
-RecordExpr : ident '=' AppExpr                              { [($1, $3)] }
-           | ident '=' AppExpr ',' RecordExpr               { ($1, $3):$5 }
+VarExpr : ident                                             {% processVar $1 }
+
+TupExpr : '(' TupInner ')'                                  { TermTup Blank $2 }
+
+TupInner : {- empty -}                                      { [] }
+         | AppExpr                                          { [$1] }
+         | AppExpr ',' TupInner                             { $1 : $3 }
+
+RecordExpr : '{' RecordInner '}'                            { TermRecord Blank $2 }
+
+RecordInner : ident '=' AppExpr                             { [($1, $3)] }
+            | ident '=' AppExpr ',' RecordInner             { ($1, $3):$5 }
 
 MatchExpr : '{' RecordPattern '}'                           { MatchRecord $2 }
           | ident                                           {% (storeMatchIdent $1) >> return (MatchVar $1) }
@@ -105,8 +117,15 @@ RecordType : ident ':' Type                                 { [($1, $3)] }
 
 {
 
+
+-- traceShowMsg :: Show a => String -> a -> a
+-- traceShowMsg msg x = let
+--     s = msg ++ ": " ++ show x ++ "\n"
+--     in trace s x
+
 data PState = PState {
-        context :: [Context]
+        context :: [Context],
+        currentMatchContext :: Context
     }
     deriving (Show)
 
@@ -134,28 +153,26 @@ storeAbsIdent ident tt = do
     put $ pstate { context = ctx ++ [[(ident, NameBind)]] }
     return $ (ident, tt)
 
-pushNewMatchIdent :: P ()
-pushNewMatchIdent = do
-    pstate <- trace "PushNewMatchIdent" get
-    let ctx = context pstate
-    put $ pstate { context = ctx ++ [[]] }
+writeMatchContext :: P ()
+writeMatchContext = do
+    pstate <- get
+    let PState { context, currentMatchContext } = pstate
+    put $ pstate { context = context ++ [currentMatchContext], currentMatchContext = [] }
 
 storeMatchIdent :: String -> P ()
 storeMatchIdent ident = do
     pstate <- get
-    let ctx = context pstate
-    let currentMatchCtx = last ctx
-    let ctx' = init ctx
+    let ctx = currentMatchContext pstate
 
-    put $ pstate { context = ctx' ++ [currentMatchCtx ++ [(ident, NameBind)]] }
+    put $ pstate { currentMatchContext = ctx ++ [(ident, NameBind)] }
 
 processVar :: String -> P Term
 processVar ident = do
     pstate <- get
-    let ctx = concat $ traceShowId $ context pstate
+    let ctx = concat $ context pstate
     case getIndexFromContext ctx ident of
         Nothing -> lift $ Left ("Could not find " ++ ident ++ " in context " ++ (show ctx))
         (Just idx) -> return $ TermVar Blank idx
 
-parse l = evalStateT (expr l) (PState [])
+parse l = evalStateT (expr l) (PState [] [])
 }

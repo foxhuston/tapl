@@ -33,10 +33,11 @@ runFile fileName = do
     let toks = tokenize contents
     let forms = parse toks
 
+    -- putStrLn "---"
     -- print toks
-    putStrLn "---"
-    print forms
-    putStrLn "---"
+    -- putStrLn "---"
+    -- print forms
+    -- putStrLn "---"
 
     case forms of
         (Right forms) -> mapM_ printForm forms

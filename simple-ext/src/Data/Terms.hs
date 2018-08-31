@@ -150,7 +150,7 @@ showTermInContext ctx (TermRecord _ ts) = showRecord "=" $ map (second (showTerm
 showTermInContext ctx (TermRecordProjection _ t l) = showTermInContext ctx t ++ "." ++ l
 showTermInContext ctx (TermLet _ m t1 t2) =
     let (ctx', xs') = pickFreshNames ctx $ getMatchNames m
-    in "(let " ++ show m ++ " = " ++ showTermInContext ctx' t1
+    in "(let " ++ show m ++ " = " ++ showTermInContext ctx t1
        ++ "\nin " ++ showTermInContext ctx' t2 ++ ")"
 showTermInContext _ (TermNat _ n) = show n
 showTermInContext _ (TermTrue _)  = "true"

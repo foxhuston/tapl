@@ -12,13 +12,13 @@ eval t =
     case eval1 t of
         Just t' -> eval t'
         Nothing -> t
-        
 
 termShift :: Int -> Term -> Term
 termShift d t = walk 0 t
     where
         walk c (TermVar i k)                 = TermVar i $ (if k < c then k else k + d)
         walk c (TermAbs i h ty t1)           = TermAbs i h ty $ walk (c + 1) t1
+        walk c (TermLet i p t1 t2)           = TermLet i p (walk c t1) (walk c t2)
         walk c (TermApp i t1 t2)             = TermApp i (walk c t1) (walk c t2)
         walk c (TermIf i t1 t2 t3)           = TermIf i (walk c t1) (walk c t2) (walk c t3)
         walk c (TermIsZero i t1)             = TermIsZero i (walk c t1)
@@ -36,7 +36,7 @@ termSub :: Int -> Term -> Term -> Term
 termSub j s t1@(TermVar _ k)              = if j == k then s else t1
 termSub j s (TermAbs i h ty t1)           = TermAbs i h ty $ termSub (j + 1) (termShift 1 s) t1
 termSub j s (TermApp i t1 t2)             = TermApp i (termSub j s t1) (termSub j s t2)
-termSub j s (TermLet i p t1 t2)           = TermLet i p (termSub j s t1) (termSub j s t2)
+termSub j s (TermLet i p t1 t2)           = TermLet i p (termSub j s t1) (termSub (j + 1) (termShift 1 s) t2)
 termSub j s (TermIf i t1 t2 t3)           = TermIf i (termSub j s t1) (termSub j s t2) (termSub j s t3)
 termSub j s (TermIsZero i t1)             = TermIsZero i (termSub j s t1)
 termSub j s (TermSucc i t1)               = TermSucc i (termSub j s t1)
@@ -66,7 +66,9 @@ getMatchContext p t = numberContext $ matchContext p t
 
 letSub :: MatchPattern -> Term -> Term -> Term
 letSub p v1 t2 = let
-    ctx' = getMatchContext p v1
+    ctx = getMatchContext p v1
+    lc  = length ctx
+    ctx' = map (second (termShift lc)) ctx
     in walk ctx' t2
     where
         walk [] t = t
