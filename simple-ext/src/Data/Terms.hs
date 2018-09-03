@@ -6,6 +6,7 @@ module Data.Terms (
     Binding(..),
     Context(..),
     TypeContext(..),
+    EqnContext(..),
     addBinding,
     showTermInContext,
     getIndexFromContext,
@@ -91,6 +92,7 @@ data Term =
     deriving (Show, Eq)
 
 type Context = [(String, Binding)]
+type EqnContext = [(String, Term)]
 
 contextLength :: Context -> Int
 contextLength = length

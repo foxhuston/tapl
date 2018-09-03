@@ -2,7 +2,8 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
 module Parse.Parse (
-    parse
+    parse,
+    PState(..)
 ) where
 
 import Data.Maybe (isJust, fromJust)
@@ -59,15 +60,17 @@ import Debug.Trace
 
 Program : TopLevelExpression                                { [$1] }
         | TopLevelExpression ';'                            { [$1] }
-        | TopLevelExpression Program                        { ($1 : $2) }
+        | Program TopLevelExpression                        { ($2 : $1) }
+        | Program TopLevelExpression ';'                    { ($2 : $1) }
 
 
 TopLevelExpression : TypeDecl                               { Nothing }
-                --    | Equation                               { $1 }
+                   | Equation                               { Nothing }
                    | AppExpr                                { Just $1 }
 
 
 TypeDecl : type userType '=' Type                           {% storeTypeContext $2 $4 }
+Equation : ident '=' AppExpr                                {% storeEquation $1 $3 }
 
 PopContext : {- empty -}                                    {% popContext }
 WriteMatchContext : {- empty -}                             {% writeMatchContext }
@@ -145,7 +148,8 @@ RecordType : ident ':' Type                                 { [($1, $3)] }
 data PState = PState {
         context :: [Context],
         currentMatchContext :: Context,
-        types :: TypeContext
+        types :: TypeContext,
+        equations :: EqnContext
     }
     deriving (Show)
 
@@ -158,6 +162,17 @@ storeTypeContext name ty = do
     pstate <- get
     let tctx = types pstate
     put $ pstate { types = tctx ++ [(name, ty)] }
+    return ()
+
+storeEquation :: String -> Term -> P ()
+storeEquation name term = do
+    pstate <- get
+    let ctx = context pstate
+    let eqns = equations pstate
+    put $ pstate {
+        equations = eqns ++ [(name, term)],
+        context = ctx ++ [[(name, NameBind)]]
+    }
     return ()
 
 popContext :: P ()
@@ -199,7 +214,7 @@ unMaybeFirst :: ([Maybe a], b) -> ([a], b)
 unMaybeFirst = first (map fromJust . filter isJust)
 
 parse' :: [Lexeme] -> Either String ([Maybe Term], PState)
-parse' l = runStateT (expr l) (PState [] [] [])
+parse' l = runStateT (expr l) (PState [] [] [] [])
 
 parse l = unMaybeFirst <$> parse' l
 }

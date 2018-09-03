@@ -1,3 +1,5 @@
+{-# LANGUAGE NamedFieldPuns #-}
+
 module Main where
 
 import System.Environment (getArgs)
@@ -41,14 +43,17 @@ runFile fileName = do
     putStrLn "---"
 
     case output of
-        (Right (forms, context)) -> mapM_ printForm forms
+        (Right (forms, context)) -> mapM_ (printForm context) forms
         (Left error) -> putStrLn error
 
-printForm :: Term -> IO ()
-printForm term = do
-    putStr $ showTermInContext [] term
+printForm :: PState -> Term -> IO ()
+printForm pstate term = do
+    let PState { types, equations } = pstate
+    let ctx' = generateContextFromEquations equations
+
+    putStr $ showTermInContext ctx' term
     putStr ": "
-    print $ typeof [] term
+    print $ typeof ctx' term
     putStr "\n= "
     putStrLn $ showTermInContext [] $ eval term
     putStrLn "---\n"

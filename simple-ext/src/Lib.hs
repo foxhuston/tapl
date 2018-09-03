@@ -2,11 +2,13 @@ module Lib
 (
     Context,
     Term,
+    PState(..),
     parse,
     tokenize,
     showTermInContext,
     eval,
-    typeof
+    typeof,
+    generateContextFromEquations
 ) where
 
 import Data.Terms

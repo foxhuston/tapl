@@ -1,5 +1,6 @@
 module Processing.Typecheck (
-    typeof
+    typeof,
+    generateContextFromEquations
 ) where
 
 import Data.Bifunctor
@@ -13,6 +14,15 @@ matchType (MatchRecord ps) (TypeRecord ts) =
         Nothing -> error "Invalid Match!"
         (Just mp) -> concat $ map (uncurry matchType) mp
 matchType _ _ = error "Invalid Match!"
+
+generateContextFromEquations :: EqnContext -> Context
+generateContextFromEquations eqns = gcfe' [] eqns
+    where
+        gcfe' :: Context -> EqnContext -> Context
+        gcfe' ctx [] = ctx
+        gcfe' ctx ((name, term):eqns) =
+            let tt = typeof ctx term
+            in gcfe' (ctx ++ [(name, VarBind tt)]) eqns
 
 typeof :: Context -> Term -> TermType
 typeof ctx term

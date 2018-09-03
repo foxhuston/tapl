@@ -1,14 +1,18 @@
 -- "Hello, World!";
 
--- tru = \t. \f. t;
--- fls = \t. \f. f;
+a = 3;
 
--- test = \l. \m. \n. l m n;
--- and = \b. \c. b c fls;
+\x:Nat. a;
+
+-- tru = \t:Bool. \f:Bool. t;
+-- fls = \t:Bool. \f:Bool. f;
+
+-- -- test = \l. \m. \n. l m n;
+-- and = \b:Bool->Bool. \c:Bool->Bool. b c fls;
 
 -- and tru fls;
 
-type PhysicalAddr = { firstlast:String, addr:String };
+-- type PhysicalAddr = { firstlast:String, addr:String };
 -- type VirtualAddr  = { name:String, email:String };
 
 -- type Addr = <physical:PhysicalAddr, virtual:VirtualAddr>;
