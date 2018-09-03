@@ -1,6 +1,14 @@
-"Hello, World!";
+-- "Hello, World!";
 
--- type PhysicalAddr = { firstlast:String, addr:String };
+-- tru = \t. \f. t;
+-- fls = \t. \f. f;
+
+-- test = \l. \m. \n. l m n;
+-- and = \b. \c. b c fls;
+
+-- and tru fls;
+
+type PhysicalAddr = { firstlast:String, addr:String };
 -- type VirtualAddr  = { name:String, email:String };
 
 -- type Addr = <physical:PhysicalAddr, virtual:VirtualAddr>;

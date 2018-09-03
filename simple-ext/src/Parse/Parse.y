@@ -5,6 +5,9 @@ module Parse.Parse (
     parse
 ) where
 
+import Data.Maybe (isJust, fromJust)
+import Data.Bifunctor (first)
+
 import Parse.Tokenize
 import Data.Terms
 import Control.Monad.State.Strict
@@ -12,6 +15,8 @@ import Control.Monad.State.Strict
 import Debug.Trace
 
 }
+
+-- TODO[GH]: How do I make a two pass parser??? Do I just make two parser files?
 
 %name expr
 %tokentype { Lexeme }
@@ -30,6 +35,7 @@ import Debug.Trace
     iszero          { LexIsZero }
     let             { LexLet }
     in              { LexIn }
+    type            { LexType }
     '('             { LexLParen }
     ')'             { LexRParen }
     '{'             { LexLBrace }
@@ -51,11 +57,18 @@ import Debug.Trace
 
 %%
 
-Program : AppExpr                                           { [$1] }
-        | AppExpr ClearContext ';'                          { [$1] }
-        | AppExpr ClearContext ';' Program                  { ($1 : $4) }
+Program : TopLevelExpression                                { [$1] }
+        | TopLevelExpression ';'                            { [$1] }
+        | TopLevelExpression Program                        { ($1 : $2) }
 
-ClearContext : {- empty -}                                  {% clearContext }
+
+TopLevelExpression : TypeDecl                               { Nothing }
+                --    | Equation                               { $1 }
+                   | AppExpr                                { Just $1 }
+
+
+TypeDecl : type userType '=' Type                           {% storeTypeContext $2 $4 }
+
 PopContext : {- empty -}                                    {% popContext }
 WriteMatchContext : {- empty -}                             {% writeMatchContext }
 
@@ -112,6 +125,7 @@ Type : Type '->' Type                                       { TypeArrow $1 $3 }
      | boolType                                             { TypeBool }
      | natType                                              { TypeNat }
      | stringType                                           { TypeString }
+     | userType                                             { TypeUser $1 }
 
 TupleType : {- empty -}                                     { [] }
           | Type                                            { [$1] }
@@ -130,7 +144,8 @@ RecordType : ident ':' Type                                 { [($1, $3)] }
 
 data PState = PState {
         context :: [Context],
-        currentMatchContext :: Context
+        currentMatchContext :: Context,
+        types :: TypeContext
     }
     deriving (Show)
 
@@ -138,10 +153,11 @@ type P a = StateT PState (Either String) a
 
 parseError tok = lift $ Left ("Parse Error: " ++ show tok)
 
-clearContext :: P ()
-clearContext = do
+storeTypeContext :: String -> TermType -> P ()
+storeTypeContext name ty = do
     pstate <- get
-    put $ pstate { context = [] }
+    let tctx = types pstate
+    put $ pstate { types = tctx ++ [(name, ty)] }
     return ()
 
 popContext :: P ()
@@ -179,5 +195,11 @@ processVar ident = do
         Nothing -> lift $ Left ("Could not find " ++ ident ++ " in context " ++ (show ctx))
         (Just idx) -> return $ TermVar Blank idx
 
-parse l = evalStateT (expr l) (PState [] [])
+unMaybeFirst :: ([Maybe a], b) -> ([a], b)
+unMaybeFirst = first (map fromJust . filter isJust)
+
+parse' :: [Lexeme] -> Either String ([Maybe Term], PState)
+parse' l = runStateT (expr l) (PState [] [] [])
+
+parse l = unMaybeFirst <$> parse' l
 }

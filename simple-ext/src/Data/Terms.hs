@@ -5,6 +5,7 @@ module Data.Terms (
     Info(..),
     Binding(..),
     Context(..),
+    TypeContext(..),
     addBinding,
     showTermInContext,
     getIndexFromContext,
@@ -40,9 +41,11 @@ data TermType =
     | TypeTuple [TermType]
     | TypeRecord [(String, TermType)]
     -- | TypeVariant [(String, TermType)]
-    -- | TypeUser String
+    | TypeUser String
     | TypeArrow TermType TermType
     deriving (Eq)
+
+type TypeContext = [(String, TermType)]
 
 instance Show TermType where
     show (TypeNat)         = "Nat"

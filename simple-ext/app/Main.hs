@@ -32,16 +32,16 @@ runFile fileName = do
     contents <- readFile fileName
     let toks = tokenize contents
 
-    putStrLn "---"
-    print toks
+    -- putStrLn "---"
+    -- print toks
+    -- putStrLn "---"
+
+    let output = parse toks
+    print output
     putStrLn "---"
 
-    let forms = parse toks
-    print forms
-    putStrLn "---"
-
-    case forms of
-        (Right forms) -> mapM_ printForm forms
+    case output of
+        (Right (forms, context)) -> mapM_ printForm forms
         (Left error) -> putStrLn error
 
 printForm :: Term -> IO ()
