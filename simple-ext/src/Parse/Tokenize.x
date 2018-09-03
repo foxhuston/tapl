@@ -10,6 +10,10 @@ module Parse.Tokenize (
 
 $digit = 0-9                  -- digits
 $alpha = [a-zA-Z]             -- alphabetic characters
+$graphic = $printable
+
+@string = \" ($graphic # \") * \"
+
 
 tokens :-
   $white+                          ;
@@ -24,6 +28,10 @@ tokens :-
   iszero                           { \s -> LexIsZero }
   let                              { \s -> LexLet }
   in                               { \s -> LexIn }
+  as                               { \s -> LexAs }
+  of                               { \s -> LexOf }
+  case                             { \s -> LexCase }
+  type                             { \s -> LexType }
   "->"                             { \s -> LexArrow }
   "\"                              { \s -> LexLambda }
   "."                              { \s -> LexDot }
@@ -34,10 +42,13 @@ tokens :-
   ")"                              { \s -> LexRParen }
   "{"                              { \s -> LexLBrace }
   "}"                              { \s -> LexRBrace }
+  "<"                              { \s -> LexLBracket }
+  ">"                              { \s -> LexRBracket }
   "="                              { \s -> LexEquals }
-  [0-9]+                           { \s -> LexNat $ read s }
-  [a-z][A-Za-z0-9_']*              { \s -> LexIdent s }
-  [A-Z][A-Za-z0-9_']*              { \s -> LexTypeIdent s }
+  @string                          { LexString . read }
+  [0-9]+                           { LexNat . read }
+  [a-z][A-Za-z0-9_']*              { LexIdent }
+  [A-Z][A-Za-z0-9_']*              { LexTypeIdent }
 
 {
 -- Each action has type :: String -> Token
@@ -56,6 +67,12 @@ data Lexeme =
   | LexDot
   | LexLet
   | LexIn
+  | LexCase
+  | LexOf
+  | LexType
+  | LexAs
+  | LexLBracket
+  | LexRBracket
   | LexLParen
   | LexRParen
   | LexLBrace
@@ -66,6 +83,7 @@ data Lexeme =
   | LexSucc
   | LexPred
   | LexIsZero
+  | LexString String
   | LexIdent String
   | LexTypeIdent String
   deriving (Eq,Show)

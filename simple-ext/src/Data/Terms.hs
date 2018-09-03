@@ -36,14 +36,18 @@ data TermType =
       TypeUnspecified
     | TypeBool
     | TypeNat
+    | TypeString
     | TypeTuple [TermType]
     | TypeRecord [(String, TermType)]
+    -- | TypeVariant [(String, TermType)]
+    -- | TypeUser String
     | TypeArrow TermType TermType
     deriving (Eq)
 
 instance Show TermType where
     show (TypeNat)         = "Nat"
     show (TypeBool)        = "Bool"
+    show (TypeString)      = "String"
     show (TypeTuple ts)    = "(" ++ intercalate ", " (map show ts) ++ ")"
     show (TypeRecord ts)   = showRecord ":" ts
     show (TypeArrow t1 t2) = (show t1) ++ "->" ++ (show t2)
@@ -74,6 +78,9 @@ data Term =
     | TermPred Info Term
     | TermIsZero Info Term
     | TermNat Info Integer
+    | TermString Info String
+    -- | TermTag Info String Term
+    -- | TermCase Info Term [(Term, Term)]
     | TermTup Info [Term]
     | TermTupProjection Info Term Integer
     | TermRecord Info [(String, Term)]
@@ -153,6 +160,7 @@ showTermInContext ctx (TermLet _ m t1 t2) =
     in "(let " ++ show m ++ " = " ++ showTermInContext ctx t1
        ++ "\nin " ++ showTermInContext ctx' t2 ++ ")"
 showTermInContext _ (TermNat _ n) = show n
+showTermInContext _ (TermString _ s) = show s
 showTermInContext _ (TermTrue _)  = "true"
 showTermInContext _ (TermFalse _) = "false"
 
@@ -162,6 +170,7 @@ isValue (TermTrue _)      = True
 isValue (TermFalse _)     = True
 isValue (TermNat _ _)     = True
 isValue (TermTup _ [])    = True
+isValue (TermString _ _)  = True
 isValue (TermTup _ ts)    = all isValue ts
 isValue (TermRecord _ ts) = all (isValue.snd) ts
 isValue _                 = False

@@ -25,6 +25,9 @@ typeof ctx term
     | TermNat _ _ <- term
     = TypeNat
 
+    | TermString _ _ <- term
+    = TypeString
+
     | TermSucc _ t1 <- term
     = if typeof ctx t1 == TypeNat then
         TypeNat

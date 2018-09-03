@@ -24,6 +24,7 @@ import Debug.Trace
     false           { LexFalse }
     ident           { LexIdent $$ }
     nat             { LexNat $$ }
+    string          { LexString $$ }
     succ            { LexSucc }
     pred            { LexPred }
     iszero          { LexIsZero }
@@ -41,6 +42,8 @@ import Debug.Trace
     lam             { LexLambda }
     boolType        { LexTypeIdent "Bool" }
     natType         { LexTypeIdent "Nat" }
+    stringType      { LexTypeIdent "String" }
+    userType        { LexTypeIdent $$ }
     '->'            { LexArrow }
 
 %monad { P }
@@ -78,6 +81,7 @@ Expr : '(' AppExpr ')'                                      { $2 }
      | true                                                 { TermTrue Blank }
      | false                                                { TermFalse Blank }
      | nat                                                  { TermNat Blank $1 }
+     | string                                               { TermString Blank $1 }
      | VarExpr                                              { $1 }
 
 
@@ -107,6 +111,7 @@ Type : Type '->' Type                                       { TypeArrow $1 $3 }
      | '{' RecordType '}'                                   { TypeRecord $2 }
      | boolType                                             { TypeBool }
      | natType                                              { TypeNat }
+     | stringType                                           { TypeString }
 
 TupleType : {- empty -}                                     { [] }
           | Type                                            { [$1] }

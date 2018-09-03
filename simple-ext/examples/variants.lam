@@ -1,0 +1,7 @@
+"Hello, World!";
+
+-- type PhysicalAddr = { firstlast:String, addr:String };
+-- type VirtualAddr  = { name:String, email:String };
+
+-- type Addr = <physical:PhysicalAddr, virtual:VirtualAddr>;
+-- a = <physical={ firstLast: "Woah, Guy.", addr: "123 dairy lane." }> as Addr;

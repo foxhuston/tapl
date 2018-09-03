@@ -31,13 +31,14 @@ runFile :: String -> IO ()
 runFile fileName = do
     contents <- readFile fileName
     let toks = tokenize contents
-    let forms = parse toks
 
-    -- putStrLn "---"
-    -- print toks
-    -- putStrLn "---"
-    -- print forms
-    -- putStrLn "---"
+    putStrLn "---"
+    print toks
+    putStrLn "---"
+
+    let forms = parse toks
+    print forms
+    putStrLn "---"
 
     case forms of
         (Right forms) -> mapM_ printForm forms
