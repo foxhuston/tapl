@@ -14,13 +14,16 @@ module Data.Terms (
     getIndexFromContext,
     getTypeFromContext,
     getTypeForName,
+    getNameForType,
     getRecordType,
     isValue
 ) where
 
-import Data.List (findIndex, intercalate, foldl')
-import Data.Bifunctor (second)
-import Data.Maybe (isJust, fromJust)
+import Data.List (findIndex, intercalate, foldl', find)
+import Data.Bifunctor (first, second)
+import Data.Maybe (isJust, fromJust, fromMaybe)
+
+import Debug.Trace
 
 showRecord :: Show s => String -> [(String, s)] -> String
 showRecord sep ts = "{" ++ intercalate ", " (map (\(l, s) -> l ++ sep ++ (show s)) ts) ++ "}"
@@ -60,9 +63,38 @@ instance Show TermType where
     show (TypeRecord ts)   = showRecord ":" ts
     show (TypeArrow t1 t2) = (show t1) ++ "->" ++ (show t2)
 
-getTypeForName :: TermType -> TypeContext -> TermType
-getTypeForName (TypeUser name) = fromJust . lookup name
-getTypeForName t = const t
+getTypeForName :: TypeContext -> TermType -> TermType
+getTypeForName tc t
+    | (TypeUser name) <- t
+    , (Just b) <- lookup name tc
+    = b
+
+    | (TypeTuple ts) <- t
+    = TypeTuple $ map (getTypeForName tc) ts
+
+    | (TypeRecord ts) <- t
+    = TypeRecord $ map (second (getTypeForName tc)) ts
+
+    | (TypeArrow t1 t2) <- t
+    = TypeArrow (getTypeForName tc t1) (getTypeForName tc t2)
+
+    | otherwise = t
+
+getNameForType :: TypeContext -> TermType -> TermType
+getNameForType tc t
+    | (Just (a, _)) <- find (\(_, b) -> b == t) $ map (first TypeUser) tc
+    = a
+
+    | (TypeTuple ts) <- t
+    = TypeTuple $ map (getNameForType tc) ts
+
+    | (TypeRecord ts) <- t
+    = TypeRecord $ map (second (getNameForType tc)) ts
+
+    | (TypeArrow t1 t2) <- t
+    = TypeArrow (getNameForType tc t1) (getNameForType tc t2)
+
+    | otherwise = t
 
 data Binding =
       NameBind
@@ -178,7 +210,6 @@ getMatchNames :: MatchPattern -> [String]
 getMatchNames (MatchVar x) = [x]
 getMatchNames (MatchRecord (r:rs)) = getMatchNames (snd r) ++ (concat $ map (getMatchNames . snd) rs)
 
-
 getRecordType :: [(String, MatchPattern)] -> [(String, a)] -> [Maybe (MatchPattern, a)]
 getRecordType [] _ = []
 getRecordType ((label, pattern):ms) ts =
@@ -191,7 +222,7 @@ showContext :: Context -> String
 showContext = concat . map printEntry
     where printEntry :: (String, Binding) -> String
           printEntry (name, VarBind tt) = name ++ ": " ++ show tt ++ "\n\n"
-          printEntry (name, _) = error "Term " ++ name ++ " has no type in context!"
+          printEntry (name, _) = error "Term " ++ name ++ " has no type in context!\n"
 
 showTermInContext :: Context -> Term -> String
 showTermInContext ctx (TermAbs _ x ty t1) =

@@ -19,7 +19,7 @@ import Debug.Trace
 
 -- TODO[GH]: How do I make a two pass parser??? Do I just make two parser files?
 
-%name expr
+%name parseProgram Program
 %tokentype { Lexeme }
 
 %token 
@@ -58,9 +58,7 @@ import Debug.Trace
 
 %%
 
-Program : TopLevelExpression                                { [$1] }
-        | TopLevelExpression ';'                            { [$1] }
-        | Program TopLevelExpression                        { ($2 : $1) }
+Program : TopLevelExpression ';'                            { [$1] }
         | Program TopLevelExpression ';'                    { ($2 : $1) }
 
 
@@ -169,9 +167,9 @@ storeEquation name term = do
     pstate <- get
     let ctx = context pstate
     let eqns = equations pstate
-    put $ pstate {
-        equations = eqns ++ [(name, term)],
-        context = ctx ++ [[(name, NameBind)]]
+    put $ traceShowId $ pstate {
+        equations = (name,term) : eqns,
+        context = [(name, NameBind)] : ctx
     }
     return ()
 
@@ -214,7 +212,7 @@ unMaybeFirst :: ([Maybe a], b) -> ([a], b)
 unMaybeFirst = first (map fromJust . filter isJust)
 
 parse' :: [Lexeme] -> Either String ([Maybe Term], PState)
-parse' l = runStateT (expr l) (PState [] [] [] [])
+parse' l = runStateT (parseProgram l) (PState [] [] [] [])
 
 parse l = unMaybeFirst <$> parse' l
 }

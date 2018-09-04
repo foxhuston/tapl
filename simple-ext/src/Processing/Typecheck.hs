@@ -7,6 +7,8 @@ module Processing.Typecheck (
 import Data.Bifunctor
 import Data.Terms
 
+import Debug.Trace
+
 matchType :: MatchPattern -> TermType -> Context
 matchType (MatchVar s) t = [(s, VarBind t)]
 matchType (MatchRecord ps) (TypeRecord ts) =
@@ -19,20 +21,33 @@ generateContextFromEquations :: EqnContext -> TypeContext -> Context
 generateContextFromEquations eqns tc = gcfe' [] eqns
     where
         dst = desugarTypes tc
+        st = sugarTypes tc
         gcfe' :: Context -> EqnContext -> Context
         gcfe' ctx [] = ctx
         gcfe' ctx ((name, term):eqns) =
-            let tt = typeof ctx $ dst term
+            let tt = getNameForType tc $ typeof ctx $ dst term
             in gcfe' (ctx ++ [(name, VarBind tt)]) eqns
 
+mapTermTypes :: (TermType -> TermType) -> Term -> Term
+mapTermTypes f t = mapTerm g t
+    where g :: Term -> Term
+          g (TermAbs i name ty t1) = TermAbs i name (f ty) t1
+          g t = t
+
 desugarTypes :: TypeContext -> Term -> Term
-desugarTypes tc = mapTerm desugar
-    where desugar :: Term -> Term
-          desugar (TermAbs i name ty t1) = TermAbs i name (getTypeForName ty tc) t1
-          desugar t = t
+desugarTypes tc = mapTermTypes (getTypeForName tc)
+
+sugarTypes :: TypeContext -> Term -> Term
+sugarTypes tc = mapTermTypes (getNameForType tc)
+
+desugarBindingType :: TypeContext -> Binding -> Binding
+desugarBindingType tc (VarBind tt) = traceShowId $ VarBind $ trace ("GETTYPEFORNAME RETURNED: " ++ (show xs)) xs
+    where xs = getTypeForName tc tt
+desugarBindingType _ b = error $ "Can't get context type for " ++ (show b)
 
 typeOf :: Context -> TypeContext -> Term -> TermType
-typeOf ctx tc term = typeof ctx $ desugarTypes tc term
+typeOf ctx tc term = getNameForType tc $ typeof ctx' $ desugarTypes tc term
+    where ctx' = traceShowId $ map (second (desugarBindingType tc)) ctx
 
 typeof :: Context -> Term -> TermType
 typeof ctx term
@@ -109,5 +124,5 @@ typeof ctx term
       in case ty1 of
         (TypeArrow ty1' ty2') -> if ty2 == ty1'
             then ty2'
-            else error "Parameter type mismatch."
+            else error $ "Parameter type mismatch: " ++ (show ty2) ++ " != " ++ (show ty1')
         _ -> error "Expected Arrow Type"

@@ -43,17 +43,16 @@ runFile fileName = do
     -- putStrLn "---"
 
     case output of
-        (Right (forms, PState { types, equations })) -> do
-            let context = generateContextFromEquations equations types
-            putStrLn $ showContext context
-            mapM_ (printForm context types) forms
+        (Right (forms, PState { context, types, equations })) -> do
+            let ctx' = generateContextFromEquations equations types
+            putStrLn $ showContext ctx'
+            mapM_ (printForm ctx' types) forms
         (Left error) -> putStrLn error
 
 printForm :: Context -> TypeContext -> Term -> IO ()
 printForm context typeContext term = do
     putStr $ showTermInContext context term
     putStr ": "
-    print $ desugarTypes typeContext term
     print $ typeOf context typeContext term
     putStr "\n= "
     putStrLn $ showTermInContext context $ eval term

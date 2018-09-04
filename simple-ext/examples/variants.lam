@@ -1,11 +1,13 @@
-test = "Hello, World!";
+-- test = "Hello, World!";
 
 type PhysicalAddr = { firstlast:String, addr:String };
 -- type VirtualAddr  = { name:String, email:String };
 
 getName = \a:PhysicalAddr.
     let { firstlast=n } = a
-    in n
+    in n;
 
 -- type Addr = <physical:PhysicalAddr, virtual:VirtualAddr>;
 -- a = <physical={ firstLast: "Woah, Guy.", addr: "123 dairy lane." }> as Addr;
+
+getName { firstlast= "Hello", addr= "World" };
