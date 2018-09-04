@@ -1,28 +1,38 @@
 module Processing.Typecheck (
-    typeof,
-    generateContextFromEquations
+    typeOf,
+    generateContextFromEquations,
+    desugarTypes
 ) where
 
 import Data.Bifunctor
-
 import Data.Terms
 
 matchType :: MatchPattern -> TermType -> Context
 matchType (MatchVar s) t = [(s, VarBind t)]
 matchType (MatchRecord ps) (TypeRecord ts) =
     case sequence $ getRecordType ps ts of
-        Nothing -> error "Invalid Match!"
+        Nothing -> error "Invalid Record Match!"
         (Just mp) -> concat $ map (uncurry matchType) mp
-matchType _ _ = error "Invalid Match!"
+matchType p t = error $ "Invalid Match: " ++ (show p) ++ " for type " ++ (show t)
 
-generateContextFromEquations :: EqnContext -> Context
-generateContextFromEquations eqns = gcfe' [] eqns
+generateContextFromEquations :: EqnContext -> TypeContext -> Context
+generateContextFromEquations eqns tc = gcfe' [] eqns
     where
+        dst = desugarTypes tc
         gcfe' :: Context -> EqnContext -> Context
         gcfe' ctx [] = ctx
         gcfe' ctx ((name, term):eqns) =
-            let tt = typeof ctx term
+            let tt = typeof ctx $ dst term
             in gcfe' (ctx ++ [(name, VarBind tt)]) eqns
+
+desugarTypes :: TypeContext -> Term -> Term
+desugarTypes tc = mapTerm desugar
+    where desugar :: Term -> Term
+          desugar (TermAbs i name ty t1) = TermAbs i name (getTypeForName ty tc) t1
+          desugar t = t
+
+typeOf :: Context -> TypeContext -> Term -> TermType
+typeOf ctx tc term = typeof ctx $ desugarTypes tc term
 
 typeof :: Context -> Term -> TermType
 typeof ctx term

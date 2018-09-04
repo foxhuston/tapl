@@ -1,19 +1,11 @@
--- "Hello, World!";
+test = "Hello, World!";
 
-a = 3;
-
-\x:Nat. a;
-
--- tru = \t:Bool. \f:Bool. t;
--- fls = \t:Bool. \f:Bool. f;
-
--- -- test = \l. \m. \n. l m n;
--- and = \b:Bool->Bool. \c:Bool->Bool. b c fls;
-
--- and tru fls;
-
--- type PhysicalAddr = { firstlast:String, addr:String };
+type PhysicalAddr = { firstlast:String, addr:String };
 -- type VirtualAddr  = { name:String, email:String };
+
+getName = \a:PhysicalAddr.
+    let { firstlast=n } = a
+    in n
 
 -- type Addr = <physical:PhysicalAddr, virtual:VirtualAddr>;
 -- a = <physical={ firstLast: "Woah, Guy.", addr: "123 dairy lane." }> as Addr;

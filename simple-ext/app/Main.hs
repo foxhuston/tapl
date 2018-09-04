@@ -39,21 +39,23 @@ runFile fileName = do
     -- putStrLn "---"
 
     let output = parse toks
-    print output
-    putStrLn "---"
+    -- print output
+    -- putStrLn "---"
 
     case output of
-        (Right (forms, context)) -> mapM_ (printForm context) forms
+        (Right (forms, PState { types, equations })) -> do
+            let context = generateContextFromEquations equations types
+            putStrLn $ showContext context
+            mapM_ (printForm context types) forms
         (Left error) -> putStrLn error
 
-printForm :: PState -> Term -> IO ()
-printForm pstate term = do
-    let PState { types, equations } = pstate
-    let ctx' = generateContextFromEquations equations
-
-    putStr $ showTermInContext ctx' term
+printForm :: Context -> TypeContext -> Term -> IO ()
+printForm context typeContext term = do
+    putStr $ showTermInContext context term
     putStr ": "
-    print $ typeof ctx' term
+    print $ desugarTypes typeContext term
+    print $ typeOf context typeContext term
     putStr "\n= "
-    putStrLn $ showTermInContext [] $ eval term
+    putStrLn $ showTermInContext context $ eval term
     putStrLn "---\n"
+

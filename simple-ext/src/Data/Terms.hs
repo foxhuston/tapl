@@ -7,17 +7,20 @@ module Data.Terms (
     Context(..),
     TypeContext(..),
     EqnContext(..),
+    mapTerm,
     addBinding,
+    showContext,
     showTermInContext,
     getIndexFromContext,
     getTypeFromContext,
+    getTypeForName,
     getRecordType,
     isValue
 ) where
 
 import Data.List (findIndex, intercalate, foldl')
 import Data.Bifunctor (second)
-import Data.Maybe (isJust)
+import Data.Maybe (isJust, fromJust)
 
 showRecord :: Show s => String -> [(String, s)] -> String
 showRecord sep ts = "{" ++ intercalate ", " (map (\(l, s) -> l ++ sep ++ (show s)) ts) ++ "}"
@@ -52,9 +55,14 @@ instance Show TermType where
     show (TypeNat)         = "Nat"
     show (TypeBool)        = "Bool"
     show (TypeString)      = "String"
+    show (TypeUser n)      = n
     show (TypeTuple ts)    = "(" ++ intercalate ", " (map show ts) ++ ")"
     show (TypeRecord ts)   = showRecord ":" ts
     show (TypeArrow t1 t2) = (show t1) ++ "->" ++ (show t2)
+
+getTypeForName :: TermType -> TypeContext -> TermType
+getTypeForName (TypeUser name) = fromJust . lookup name
+getTypeForName t = const t
 
 data Binding =
       NameBind
@@ -93,6 +101,45 @@ data Term =
 
 type Context = [(String, Binding)]
 type EqnContext = [(String, Term)]
+
+
+mapTerm :: (Term -> Term) -> Term -> Term
+mapTerm f term
+    | (TermIf i t1 t2 t3) <- term
+    = f (TermIf i (mapTerm f t1) (mapTerm f t2) (mapTerm f t3))
+
+    | (TermLet i p t1 t2) <- term
+    = f (TermLet i p (mapTerm f t1) (mapTerm f t2))
+
+    | (TermAbs i name ty t1) <- term
+    = f (TermAbs i name ty (mapTerm f (t1)))
+
+    | (TermApp i t1 t2) <- term
+    = f (TermApp i (mapTerm f t1) (mapTerm f t2))
+
+    | (TermSucc i t1) <- term
+    = f (TermSucc i (mapTerm f t1))
+
+    | (TermPred i t1) <- term
+    = f (TermPred i (mapTerm f t1))
+
+    | (TermIsZero i t1) <- term
+    = f (TermIsZero i (mapTerm f t1))
+
+    | (TermTup i ts) <- term
+    = f (TermTup i (map (mapTerm f) ts))
+
+    | (TermTupProjection i t1 n) <- term
+    = f (TermTupProjection i (mapTerm f t1) n)
+
+    | (TermRecord i rs) <- term
+    = f (TermRecord i (map (second (mapTerm f)) rs))
+
+    | (TermRecordProjection i t1 l) <- term
+    = f (TermRecordProjection i (mapTerm f t1) l)
+
+    | t <- term
+    = f t
 
 contextLength :: Context -> Int
 contextLength = length
@@ -139,6 +186,12 @@ getRecordType ((label, pattern):ms) ts =
         ty <- (lookup label ts)
         return (pattern, ty)
     ):getRecordType ms ts
+
+showContext :: Context -> String
+showContext = concat . map printEntry
+    where printEntry :: (String, Binding) -> String
+          printEntry (name, VarBind tt) = name ++ ": " ++ show tt ++ "\n\n"
+          printEntry (name, _) = error "Term " ++ name ++ " has no type in context!"
 
 showTermInContext :: Context -> Term -> String
 showTermInContext ctx (TermAbs _ x ty t1) =

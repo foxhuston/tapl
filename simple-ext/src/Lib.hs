@@ -1,13 +1,16 @@
 module Lib
 (
     Context,
+    TypeContext,
     Term,
     PState(..),
     parse,
     tokenize,
+    showContext,
     showTermInContext,
     eval,
-    typeof,
+    typeOf,
+    desugarTypes,
     generateContextFromEquations
 ) where
 
