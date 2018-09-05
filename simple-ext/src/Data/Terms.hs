@@ -12,6 +12,7 @@ module Data.Terms (
     showContext,
     showTermInContext,
     getIndexFromContext,
+    indexToEquation,
     getTypeFromContext,
     getTypeForName,
     getNameForType,
@@ -23,7 +24,15 @@ import Data.List (findIndex, intercalate, foldl', find)
 import Data.Bifunctor (first, second)
 import Data.Maybe (isJust, fromJust, fromMaybe)
 
+import System.IO.Unsafe (unsafePerformIO)
+import Control.Exception (try)
+
 import Debug.Trace
+
+-- (!?) :: [a] -> Int -> Maybe a
+-- (!?) l n = case unsafePerformIO $ try (return $ l !! n) of
+--     Right a -> Just a
+--     Left _ -> Nothing
 
 showRecord :: Show s => String -> [(String, s)] -> String
 showRecord sep ts = "{" ++ intercalate ", " (map (\(l, s) -> l ++ sep ++ (show s)) ts) ++ "}"
@@ -134,6 +143,8 @@ data Term =
 type Context = [(String, Binding)]
 type EqnContext = [(String, Term)]
 
+indexToEquation :: EqnContext -> Int -> Term
+indexToEquation ctx n = snd $ ctx !! ((length ctx) - 1 - n)
 
 mapTerm :: (Term -> Term) -> Term -> Term
 mapTerm f term

@@ -2,6 +2,7 @@ module Lib
 (
     Context,
     TypeContext,
+    EqnContext,
     Term,
     PState(..),
     parse,

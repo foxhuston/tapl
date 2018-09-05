@@ -71,6 +71,7 @@ TypeDecl : type userType '=' Type                           {% storeTypeContext 
 Equation : ident '=' AppExpr                                {% storeEquation $1 $3 }
 
 PopContext : {- empty -}                                    {% popContext }
+PushMatchContext : {- empty -}                              {% pushMatchContext }
 WriteMatchContext : {- empty -}                             {% writeMatchContext }
 
 AppExpr : AppExpr Expr                                      { TermApp Blank $1 $2 }
@@ -79,9 +80,9 @@ AppExpr : AppExpr Expr                                      { TermApp Blank $1 $
 Expr : '(' AppExpr ')'                                      { $2 }
      | lam TypedId '.' AppExpr PopContext                   { TermAbs Blank (fst $2) (snd $2) $4 }
      | if AppExpr then AppExpr else AppExpr                 { TermIf Blank $2 $4 $6 }
-     | let MatchExpr
+     | let PushMatchContext MatchExpr
         '=' AppExpr in WriteMatchContext AppExpr
-        PopContext                                          { TermLet Blank $2 $4 $7 }
+        PopContext                                          { TermLet Blank $3 $5 $8 }
      | iszero AppExpr                                       { TermIsZero Blank $2 }
      | succ AppExpr                                         { TermSucc Blank $2 }
      | pred AppExpr                                         { TermPred Blank $2 }
@@ -145,7 +146,7 @@ RecordType : ident ':' Type                                 { [($1, $3)] }
 
 data PState = PState {
         context :: [Context],
-        currentMatchContext :: Context,
+        matchStack :: [Context],
         types :: TypeContext,
         equations :: EqnContext
     }
@@ -189,16 +190,24 @@ storeAbsIdent ident tt = do
 
 writeMatchContext :: P ()
 writeMatchContext = do
+    pstate <- trace "Write Match Context" get
+    let PState { context, matchStack } = pstate
+    let (c:cs) = matchStack
+    put $ traceShowId $ pstate { context = context ++ [c], matchStack = cs }
+
+pushMatchContext :: P ()
+pushMatchContext = do
     pstate <- get
-    let PState { context, currentMatchContext } = pstate
-    put $ pstate { context = context ++ [currentMatchContext], currentMatchContext = [] }
+    let cms = matchStack pstate
+    put $ pstate { matchStack = []:cms }
 
 storeMatchIdent :: String -> P ()
 storeMatchIdent ident = do
     pstate <- get
-    let ctx = currentMatchContext pstate
+    let (cms:cs) = matchStack pstate
+    let cms' = cms ++ [(ident, NameBind)]
 
-    put $ pstate { currentMatchContext = ctx ++ [(ident, NameBind)] }
+    put $ pstate { matchStack = cms':cs }
 
 processVar :: String -> P Term
 processVar ident = do

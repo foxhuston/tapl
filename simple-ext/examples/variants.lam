@@ -3,11 +3,20 @@
 type PhysicalAddr = { firstlast:String, addr:String };
 -- type VirtualAddr  = { name:String, email:String };
 
-getName = \a:PhysicalAddr.
-    let { firstlast=n } = a
-    in n;
+-- getName = \a:PhysicalAddr.
+--     let { firstlast=n } = a
+--     in n;
 
 -- type Addr = <physical:PhysicalAddr, virtual:VirtualAddr>;
 -- a = <physical={ firstLast: "Woah, Guy.", addr: "123 dairy lane." }> as Addr;
 
-getName { firstlast= "Hello", addr= "World" };
+-- getName { firstlast="Hello", addr="World" };
+
+let mkPart=(\c:Nat. \p:Nat. {cost=c, partNo=p})
+in let {cost=x} = mkPart 2 345
+in succ x;
+
+let getName = (\a:PhysicalAddr. let {firstlast=n} = a in n)
+in getName { firstlast="Hello", addr="World" };
+
+-- (\x:Nat. let a = x in a) 3;
