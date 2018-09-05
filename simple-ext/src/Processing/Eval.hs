@@ -10,10 +10,12 @@ import Data.Terms
 import Debug.Trace
 
 tt :: Show a => String -> a -> a
-tt msg x = trace (msg ++ ": " ++ (show x)) x
+-- tt msg x = trace (msg ++ ": " ++ (show x)) x
+tt _ x = x
 
 tsid :: Show a => Int -> a -> a
-tsid n a = trace ((concat $ map (const "  ") [1..n]) ++ (show a)) a
+-- tsid n a = trace ((concat $ map (const "  ") [1..n]) ++ (show a)) a
+tsid _ a = a
 
 eval :: EqnContext -> Term -> Term
 eval eqns t =
@@ -98,7 +100,7 @@ eval1 level eqns term
 
     | (TermApp _ (TermAbs i n _ t1) t2) <- term
     , isValue t2
-    = tsid level $ Just $ termShift (-1) $ (termSub 0 (trace ("Subbing [0 |-> " ++ (show t2) ++ "] " ++ (show t1)) t2) t1)
+    = tsid level $ Just $ termShift (-1) $ (termSub 0 t2 t1)
 
     | (TermIf i t1 t2 t3) <- term
     , isValue t1
@@ -192,4 +194,4 @@ eval1 level eqns term
     = tsid level $ Just $ indexToEquation eqns n
 
     | _ <- term
-    = traceShowId $ Nothing
+    = tsid level $ Nothing

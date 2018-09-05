@@ -168,7 +168,7 @@ storeEquation name term = do
     pstate <- get
     let ctx = context pstate
     let eqns = equations pstate
-    put $ traceShowId $ pstate {
+    put $ pstate {
         equations = (name,term) : eqns,
         context = [(name, NameBind)] : ctx
     }
@@ -190,10 +190,10 @@ storeAbsIdent ident tt = do
 
 writeMatchContext :: P ()
 writeMatchContext = do
-    pstate <- trace "Write Match Context" get
+    pstate <- get
     let PState { context, matchStack } = pstate
     let (c:cs) = matchStack
-    put $ traceShowId $ pstate { context = context ++ [c], matchStack = cs }
+    put $ pstate { context = context ++ [c], matchStack = cs }
 
 pushMatchContext :: P ()
 pushMatchContext = do
