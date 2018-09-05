@@ -41,13 +41,13 @@ sugarTypes :: TypeContext -> Term -> Term
 sugarTypes tc = mapTermTypes (getNameForType tc)
 
 desugarBindingType :: TypeContext -> Binding -> Binding
-desugarBindingType tc (VarBind tt) = traceShowId $ VarBind $ trace ("GETTYPEFORNAME RETURNED: " ++ (show xs)) xs
+desugarBindingType tc (VarBind tt) = VarBind xs
     where xs = getTypeForName tc tt
 desugarBindingType _ b = error $ "Can't get context type for " ++ (show b)
 
 typeOf :: Context -> TypeContext -> Term -> TermType
 typeOf ctx tc term = getNameForType tc $ typeof ctx' $ desugarTypes tc term
-    where ctx' = traceShowId $ map (second (desugarBindingType tc)) ctx
+    where ctx' = map (second (desugarBindingType tc)) ctx
 
 typeof :: Context -> Term -> TermType
 typeof ctx term
