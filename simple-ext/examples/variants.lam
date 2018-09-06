@@ -2,25 +2,25 @@
 
 type PhysicalAddr = { firstlast:String, addr:String };
 type VirtualAddr  = { name:String, email:String };
--- type Addr = <physical:PhysicalAddr, virtual:VirtualAddr>;
+type Addr = <physical:PhysicalAddr, virtual:VirtualAddr>;
 
 -- getName = \a:PhysicalAddr.
 --     let { firstlast=n } = a
 --     in n;
 -- getName { firstlast="Hello", addr="World" };
 
--- a = <physical={ firstLast: "Woah, Guy.", addr: "123 dairy lane." }> as Addr;
+a = <physical={ firstLast= "Woah, Guy.", addr= "123 dairy lane." }> as Addr;
 
--- getName = \a:Addr.
---     case a of
---         <physical=x> => x.firstlast
---       | <virtual=y> => y.name;
+getName = \a:Addr.
+    case a of
+        <physical=x> => x.firstlast
+      | <virtual=y> => y.name;
 
--- getName a;
+getName a;
 
-let mkPart=(\c:Nat. \p:Nat. {cost=c, partNo=p})
-in let {cost=x} = mkPart 2 345
-in succ x;
+-- let mkPart=(\c:Nat. \p:Nat. {cost=c, partNo=p})
+-- in let {cost=x} = mkPart 2 345
+-- in succ x;
 
 -- let getName = (\a:PhysicalAddr. let {firstlast=n} = a in n)
 -- in getName { firstlast="Hello", addr="World" };

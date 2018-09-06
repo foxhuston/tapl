@@ -34,8 +34,12 @@ import Debug.Trace
     let             { L _ LexReservedWord "let" }
     in              { L _ LexReservedWord "in" }
     type            { L _ LexReservedWord "type" }
+    case            { L _ LexReservedWord "case" }
+    of              { L _ LexReservedWord "of" }
+    as              { L _ LexReservedWord "as" }
     lam             { L _ LexReservedOp "\\" }
     '->'            { L _ LexReservedOp "->" }
+    '=>'            { L _ LexReservedOp "=>" }
     ';'             { L _ LexReservedOp ";" }
     '('             { L _ LexSpecial "(" }
     ')'             { L _ LexSpecial ")" }
@@ -84,9 +88,13 @@ AppExpr : AppExpr Expr                                      { TermApp Blank $1 $
 Expr : '(' AppExpr ')'                                      { $2 }
      | lam TypedId '.' AppExpr PopContext                   { TermAbs Blank (fst $2) (snd $2) $4 }
      | if AppExpr then AppExpr else AppExpr                 { TermIf Blank $2 $4 $6 }
+
      | let PushMatchContext MatchExpr
         '=' AppExpr in WriteMatchContext AppExpr
         PopContext                                          { TermLet Blank $3 $5 $8 }
+
+     | '<' ident '=' AppExpr '>' as Type                    { TermTag Blank $2 $4 $7 }
+     | case AppExpr of CaseBranches                         { TermCase Blank $2 $4 }
      | iszero AppExpr                                       { TermIsZero Blank $2 }
      | succ AppExpr                                         { TermSucc Blank $2 }
      | pred AppExpr                                         { TermPred Blank $2 }
@@ -123,11 +131,25 @@ MatchExpr : '{' RecordPattern '}'                           { MatchRecord $2 }
 RecordPattern : ident '=' MatchExpr                         { [($1, $3)] }
               | ident '=' MatchExpr ',' RecordPattern       { ($1, $3):$5 }
 
+
 TypedId : ident ':' Type                                    {% storeAbsIdent $1 $3 }
+
+CaseBranches : CaseBranch                                   { [$1] }
+             | CaseBranches '|' CaseBranch                  { ($3 : $1) }
+
+CaseBranch : CaseBranchTag '=>'
+             WriteMatchContext
+             AppExpr
+             PopContext                                     { (CaseTag (fst $1) (snd $1), $4) }
+
+CaseBranchTag : '<' PushMatchContext ident '=' ident '>'    {% (storeMatchIdent $5) >> return ($3, $5) }
+
+-- Types
 
 Type : Type '->' Type                                       { TypeArrow $1 $3 }
      | '(' TupleType ')'                                    { TypeTuple $2 }
      | '{' RecordType '}'                                   { TypeRecord $2 }
+     | '<' RecordType '>'                                   { TypeVariant $2 }
      | boolType                                             { TypeBool }
      | natType                                              { TypeNat }
      | stringType                                           { TypeString }
@@ -143,10 +165,11 @@ RecordType : ident ':' Type                                 { [($1, $3)] }
 {
 
 
--- traceShowMsg :: Show a => String -> a -> a
+traceShowMsg :: Show a => String -> a -> a
 -- traceShowMsg msg x = let
 --     s = msg ++ ": " ++ show x ++ "\n"
 --     in trace s x
+traceShowMsg _ x = x
 
 data PState = PState {
         context :: [Context],
@@ -184,7 +207,7 @@ popContext :: P ()
 popContext = do
     pstate <- get
     let cs = init $ context pstate
-    put $ pstate { context = cs }
+    put $ traceShowMsg "popContext" $ pstate { context = cs }
     return ()
 
 storeAbsIdent :: String -> TermType -> P (String, TermType)
@@ -199,13 +222,13 @@ writeMatchContext = do
     pstate <- get
     let PState { context, matchStack } = pstate
     let (c:cs) = matchStack
-    put $ pstate { context = context ++ [c], matchStack = cs }
+    put $ traceShowMsg "writeMatchContext" $ pstate { context = context ++ [c], matchStack = cs }
 
 pushMatchContext :: P ()
 pushMatchContext = do
     pstate <- get
     let cms = matchStack pstate
-    put $ pstate { matchStack = []:cms }
+    put $ traceShowMsg "pushMatchContext" $ pstate { matchStack = []:cms }
 
 storeMatchIdent :: String -> P ()
 storeMatchIdent ident = do
@@ -213,7 +236,7 @@ storeMatchIdent ident = do
     let (cms:cs) = matchStack pstate
     let cms' = cms ++ [(ident, NameBind)]
 
-    put $ pstate { matchStack = cms':cs }
+    put $ traceShowMsg "storeMatchIdent" $ pstate { matchStack = cms':cs }
 
 processVar :: String -> P Term
 processVar ident = do

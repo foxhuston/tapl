@@ -27,7 +27,7 @@ $special = [\(\)\,\.\:\<\>\=\[\]\`\|\{\}]
   if|then|else|true|false|succ|pred|iszero|let|in|as|of|case|type
   
 @reservedop =
-  "->" | "\" | ";"
+  "->" | "\" | ";" | "=>"
 
 @varid  = $small $idchar*
 @typeid = $large $idchar*

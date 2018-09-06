@@ -1,6 +1,7 @@
 module Data.Terms (
     TermType (..),
     Term(..),
+    CaseTag(..),
     MatchPattern(..),
     Info(..),
     Binding(..),
@@ -35,7 +36,7 @@ import Debug.Trace
 --     Left _ -> Nothing
 
 showRecord :: Show s => String -> [(String, s)] -> String
-showRecord sep ts = "{" ++ intercalate ", " (map (\(l, s) -> l ++ sep ++ (show s)) ts) ++ "}"
+showRecord sep ts = intercalate ", " (map (\(l, s) -> l ++ sep ++ (show s)) ts)
 
 data Info =
     Info {
@@ -56,7 +57,7 @@ data TermType =
     | TypeString
     | TypeTuple [TermType]
     | TypeRecord [(String, TermType)]
-    -- | TypeVariant [(String, TermType)]
+    | TypeVariant [(String, TermType)]
     | TypeUser String
     | TypeArrow TermType TermType
     deriving (Eq)
@@ -69,7 +70,8 @@ instance Show TermType where
     show (TypeString)      = "String"
     show (TypeUser n)      = n
     show (TypeTuple ts)    = "(" ++ intercalate ", " (map show ts) ++ ")"
-    show (TypeRecord ts)   = showRecord ":" ts
+    show (TypeVariant ts)  = "<" ++ (showRecord ":" ts) ++ ">"
+    show (TypeRecord ts)   = "{" ++ (showRecord ":" ts) ++ "}"
     show (TypeArrow t1 t2) = (show t1) ++ "->" ++ (show t2)
 
 getTypeForName :: TypeContext -> TermType -> TermType
@@ -117,7 +119,10 @@ data MatchPattern =
 
 instance Show MatchPattern where
     show (MatchVar s) = s
-    show (MatchRecord rs) = showRecord "=" rs
+    show (MatchRecord rs) = "{" ++ (showRecord "=" rs) ++ "}"
+
+data CaseTag = CaseTag { caseLabel :: String, caseVar :: String }
+    deriving (Show, Eq)
 
 data Term = 
       TermTrue Info
@@ -132,8 +137,8 @@ data Term =
     | TermIsZero Info Term
     | TermNat Info Integer
     | TermString Info String
-    -- | TermTag Info String Term
-    -- | TermCase Info Term [(Term, Term)]
+    | TermTag Info String Term TermType
+    | TermCase Info Term [(CaseTag, Term)]
     | TermTup Info [Term]
     | TermTupProjection Info Term Integer
     | TermRecord Info [(String, Term)]
@@ -253,7 +258,7 @@ showTermInContext ctx (TermPred _ t1) = "(pred " ++ showTermInContext ctx t1 ++ 
 showTermInContext ctx (TermIsZero _ t1) = "(iszero " ++ showTermInContext ctx t1 ++ ")"
 showTermInContext ctx (TermTup _ ts) = "(" ++ intercalate ", " (map (showTermInContext ctx) ts) ++ ")"
 showTermInContext ctx (TermTupProjection _ t n) = showTermInContext ctx t ++ "." ++ show n
-showTermInContext ctx (TermRecord _ ts) = showRecord "=" $ map (second (showTermInContext ctx)) ts
+showTermInContext ctx (TermRecord _ ts) = "{" ++ (showRecord "=" $ map (second (showTermInContext ctx)) ts) ++ "}"
 showTermInContext ctx (TermRecordProjection _ t l) = showTermInContext ctx t ++ "." ++ l
 showTermInContext ctx (TermLet _ m t1 t2) =
     let (ctx', xs') = pickFreshNames ctx $ getMatchNames m
