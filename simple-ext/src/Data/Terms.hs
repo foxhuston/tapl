@@ -16,6 +16,7 @@ module Data.Terms (
     indexToEquation,
     getTypeFromContext,
     getTypeForName,
+    getTypeForVariantLabel,
     getNameForType,
     getRecordType,
     isValue
@@ -68,7 +69,7 @@ instance Show TermType where
     show (TypeNat)         = "Nat"
     show (TypeBool)        = "Bool"
     show (TypeString)      = "String"
-    show (TypeUser n)      = "|" ++ n ++ "|"
+    show (TypeUser n)      = n
     show (TypeTuple ts)    = "(" ++ intercalate ", " (map show ts) ++ ")"
     show (TypeVariant ts)  = "<" ++ (showRecord ":" ts) ++ ">"
     show (TypeRecord ts)   = "{" ++ (showRecord ":" ts) ++ "}"
@@ -159,7 +160,7 @@ type Context = [(String, Binding)]
 type EqnContext = [(String, Term)]
 
 indexToEquation :: EqnContext -> Int -> Term
-indexToEquation ctx n = snd $ ctx !! ((length ctx) - 1 - n)
+indexToEquation ctx n = snd $ ctx !! (trace "indexToEquation" ((length ctx) - 1 - n))
 
 mapTerm :: (Term -> Term) -> Term -> Term
 mapTerm f term
@@ -206,9 +207,7 @@ indexToName :: Context -> Int -> String
 indexToName ctx n = fst $ ctx !! ((length ctx) - 1 - n)
 
 getIndexFromContext :: Context -> String -> Maybe Int
-getIndexFromContext ctx name =
-    (\idx -> (length ctx) - 1 - idx) <$>
-    findIndex (\(s, _) -> name == s) ctx
+getIndexFromContext ctx name = findIndex (\(s, _) -> name == s) $ reverse ctx
 
 getTypeFromContext :: Context -> Int -> Maybe TermType
 getTypeFromContext ctx x =
@@ -244,6 +243,9 @@ getRecordType ((label, pattern):ms) ts =
         return (pattern, ty)
     ):getRecordType ms ts
 
+getTypeForVariantLabel :: [(String, TermType)] -> String -> TermType
+getTypeForVariantLabel variants label = fromJust $ lookup label variants
+
 showContext :: Context -> String
 showContext = concat . map printEntry
     where printEntry :: (String, Binding) -> String
@@ -274,6 +276,16 @@ showTermInContext ctx (TermLet _ m t1 t2) =
     let (ctx', xs') = pickFreshNames ctx $ getMatchNames m
     in "(let " ++ show m ++ " = " ++ showTermInContext ctx t1
        ++ "\nin " ++ showTermInContext ctx' t2 ++ ")"
+
+showTermInContext ctx (TermCase _ t1 bindings) = --"case expr"
+    let freshTerms = map (first (\(CaseTag lab v) -> let (ctx', v') = pickFreshName ctx v
+                                                     in (ctx', (lab, v)))) bindings
+    in "(case " ++ (showTermInContext ctx t1) ++ " of \n    "
+        ++ (intercalate "\n  | " $
+                map (\((ctx', (l, x')), t) ->
+                    "<" ++ l ++ "=" ++ x' ++ "> => " ++
+                    (showTermInContext ctx' t)) freshTerms)
+
 showTermInContext _ (TermNat _ n) = show n
 showTermInContext _ (TermString _ s) = show s
 showTermInContext _ (TermTrue _)  = "true"

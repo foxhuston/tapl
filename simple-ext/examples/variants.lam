@@ -11,6 +11,10 @@ type Addr = <physical:PhysicalAddr, virtual:VirtualAddr>;
 
 a = <physical={ firstlast= "Woah, Guy.", addr= "123 dairy lane." }> as <physical: PhysicalAddr, virtual: VirtualAddr>;
 
+-- case a of
+--     <physical=x> => x.firstlast
+--     | <virtual=y> => y.name;
+
 getName = \a:Addr.
     case a of
         <physical=x> => x.firstlast

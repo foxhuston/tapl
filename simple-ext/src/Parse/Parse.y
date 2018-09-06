@@ -142,7 +142,7 @@ CaseBranch : CaseBranchTag '=>'
              AppExpr
              PopContext                                     { (CaseTag (fst $1) (snd $1), $4) }
 
-CaseBranchTag : '<' PushMatchContext ident '=' ident '>'    {% (storeMatchIdent $5) >> return ($3, $5) }
+CaseBranchTag : '<' ident PushMatchContext '=' ident '>'    {% (storeMatchIdent $5) >> return ($2, $5) }
 
 -- Types
 
@@ -241,10 +241,10 @@ storeMatchIdent ident = do
 processVar :: String -> P Term
 processVar ident = do
     pstate <- get
-    let ctx = concat $ context pstate
+    let ctx = traceShowMsg ("processVar " ++ ident) $ concat $ context pstate
     case getIndexFromContext ctx ident of
         Nothing -> lift $ Left ("Could not find " ++ ident ++ " in context " ++ (show ctx))
-        (Just idx) -> return $ TermVar Blank idx
+        (Just idx) -> return $ traceShowMsg "pv Found" $ TermVar Blank idx
 
 unMaybeFirst :: ([Maybe a], b) -> ([a], b)
 unMaybeFirst = first (map fromJust . filter isJust)

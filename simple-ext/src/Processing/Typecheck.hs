@@ -125,6 +125,22 @@ typeof ctx term
                             ++ (show tyt1))
         Nothing -> error ("Could not find label '" ++ label ++ "' in type " ++ (show ty))
 
+    | TermCase _ t1 bindings <- term
+    = case typeof ctx t1 of
+        (TypeVariant ts) ->
+            let subTypes = map (\(tag, term) -> let
+                                        label = caseLabel tag
+                                        labelType = getTypeForVariantLabel ts label
+                                        ctx' = addBinding ctx label (VarBind labelType)
+                                    in typeof ctx' term
+                                ) bindings
+                headSt = head subTypes
+                restSt = tail subTypes
+            in if all (==headSt) restSt
+                then headSt
+                else error $ "All branches of case statement must agree; found: " ++ (show subTypes)
+        t -> error $ "t must have type variant in case t of ...; found " ++ (show t)
+
     | TermVar _ n <- term
     , (Just tv) <- getTypeFromContext ctx n
     = tv
