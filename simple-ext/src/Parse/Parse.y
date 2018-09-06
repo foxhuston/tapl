@@ -67,7 +67,7 @@ import Debug.Trace
 %%
 
 Program : TopLevelExpression ';'                            { [$1] }
-        | Program TopLevelExpression ';'                    { ($2 : $1) }
+        | TopLevelExpression ';' Program                    { ($1 : $3) }
 
 
 TopLevelExpression : TypeDecl                               { Nothing }
@@ -108,7 +108,7 @@ Expr : '(' AppExpr ')'                                      { $2 }
      | true                                                 { TermTrue Blank }
      | false                                                { TermFalse Blank }
      | nat                                                  { TermNat Blank (read $1) }
-     | string                                               { TermString Blank $1 }
+     | string                                               { TermString Blank (trimLexString $1) }
      | VarExpr                                              { $1 }
 
 
@@ -164,6 +164,8 @@ RecordType : ident ':' Type                                 { [($1, $3)] }
 
 {
 
+trimLexString :: String -> String
+trimLexString = tail . init
 
 traceShowMsg :: Show a => String -> a -> a
 -- traceShowMsg msg x = let

@@ -4,16 +4,14 @@ type PhysicalAddr = { firstlast:String, addr:String };
 type VirtualAddr  = { name:String, email:String };
 type Addr = <physical:PhysicalAddr, virtual:VirtualAddr>;
 
+type Test = <a:String, b:String>;
+
 -- getName = \a:PhysicalAddr.
 --     let { firstlast=n } = a
 --     in n;
 -- getName { firstlast="Hello", addr="World" };
 
-a = <physical={ firstlast= "Woah, Guy.", addr= "123 dairy lane." }> as <physical: PhysicalAddr, virtual: VirtualAddr>;
-
--- case a of
---     <physical=x> => x.firstlast
---     | <virtual=y> => y.name;
+a = <physical={ firstlast= "Woah, Guy.", addr= "123 dairy lane." }> as Addr;
 
 getName = \a:Addr.
     case a of
@@ -21,6 +19,7 @@ getName = \a:Addr.
       | <virtual=y> => y.name;
 
 getName a;
+
 
 -- let mkPart=(\c:Nat. \p:Nat. {cost=c, partNo=p})
 -- in let {cost=x} = mkPart 2 345

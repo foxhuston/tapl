@@ -160,7 +160,7 @@ type Context = [(String, Binding)]
 type EqnContext = [(String, Term)]
 
 indexToEquation :: EqnContext -> Int -> Term
-indexToEquation ctx n = snd $ ctx !! (trace "indexToEquation" ((length ctx) - 1 - n))
+indexToEquation ctx n = snd $ ctx !! ((length ctx) - 1 - n)
 
 mapTerm :: (Term -> Term) -> Term -> Term
 mapTerm f term
@@ -252,6 +252,9 @@ showContext = concat . map printEntry
           printEntry (name, VarBind tt) = name ++ ": " ++ show tt ++ "\n\n"
           printEntry (name, _) = error "Term " ++ name ++ " has no type in context!\n"
 
+showRecordInContext :: String -> Context -> [(String, String)] -> String
+showRecordInContext sep ctx ts = intercalate ", " (map (\(l, s) -> l ++ sep ++ s) ts)
+
 showTermInContext :: Context -> Term -> String
 showTermInContext ctx (TermAbs _ x ty t1) =
     let (ctx', x') = pickFreshName ctx x in
@@ -270,7 +273,8 @@ showTermInContext ctx (TermPred _ t1) = "(pred " ++ showTermInContext ctx t1 ++ 
 showTermInContext ctx (TermIsZero _ t1) = "(iszero " ++ showTermInContext ctx t1 ++ ")"
 showTermInContext ctx (TermTup _ ts) = "(" ++ intercalate ", " (map (showTermInContext ctx) ts) ++ ")"
 showTermInContext ctx (TermTupProjection _ t n) = showTermInContext ctx t ++ "." ++ show n
-showTermInContext ctx (TermRecord _ ts) = "{" ++ (showRecord "=" $ map (second (showTermInContext ctx)) ts) ++ "}"
+showTermInContext ctx (TermRecord _ ts) = "{" ++ (showRecordInContext "=" ctx $ map (second (showTermInContext ctx)) ts) ++ "}"
+showTermInContext ctx (TermTag _ label term termType) = "<" ++ label ++ "=" ++ (showTermInContext ctx term) ++ "> as " ++ (show termType)
 showTermInContext ctx (TermRecordProjection _ t l) = showTermInContext ctx t ++ "." ++ l
 showTermInContext ctx (TermLet _ m t1 t2) =
     let (ctx', xs') = pickFreshNames ctx $ getMatchNames m
@@ -286,10 +290,13 @@ showTermInContext ctx (TermCase _ t1 bindings) = --"case expr"
                     "<" ++ l ++ "=" ++ x' ++ "> => " ++
                     (showTermInContext ctx' t)) freshTerms)
 
+
 showTermInContext _ (TermNat _ n) = show n
 showTermInContext _ (TermString _ s) = show s
 showTermInContext _ (TermTrue _)  = "true"
 showTermInContext _ (TermFalse _) = "false"
+
+showTermInContext _ t = error $ "Trying to show: " ++ (show t)
 
 isValue :: Term -> Bool
 isValue (TermAbs _ _ _ _) = True
