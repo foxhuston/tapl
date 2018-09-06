@@ -23,35 +23,39 @@ import Debug.Trace
 %tokentype { Lexeme }
 
 %token 
-    if              { LexIf }
-    then            { LexThen }
-    else            { LexElse }
-    true            { LexTrue }
-    false           { LexFalse }
-    ident           { LexIdent $$ }
-    nat             { LexNat $$ }
-    string          { LexString $$ }
-    succ            { LexSucc }
-    pred            { LexPred }
-    iszero          { LexIsZero }
-    let             { LexLet }
-    in              { LexIn }
-    type            { LexType }
-    '('             { LexLParen }
-    ')'             { LexRParen }
-    '{'             { LexLBrace }
-    '}'             { LexRBrace }
-    '='             { LexEquals }
-    '.'             { LexDot }
-    ','             { LexComma }
-    ':'             { LexHasType }
-    ';'             { LexSep }
-    lam             { LexLambda }
-    boolType        { LexTypeIdent "Bool" }
-    natType         { LexTypeIdent "Nat" }
-    stringType      { LexTypeIdent "String" }
-    userType        { LexTypeIdent $$ }
-    '->'            { LexArrow }
+    if              { L _ LexReservedWord "if" }
+    then            { L _ LexReservedWord "then" }
+    else            { L _ LexReservedWord "else" }
+    true            { L _ LexReservedWord "true" }
+    false           { L _ LexReservedWord "false" }
+    succ            { L _ LexReservedWord "succ" }
+    pred            { L _ LexReservedWord "pred" }
+    iszero          { L _ LexReservedWord "iszero" }
+    let             { L _ LexReservedWord "let" }
+    in              { L _ LexReservedWord "in" }
+    type            { L _ LexReservedWord "type" }
+    lam             { L _ LexReservedOp "\\" }
+    '->'            { L _ LexReservedOp "->" }
+    ';'             { L _ LexReservedOp ";" }
+    '('             { L _ LexSpecial "(" }
+    ')'             { L _ LexSpecial ")" }
+    '{'             { L _ LexSpecial "{" }
+    '}'             { L _ LexSpecial "}" }
+    '='             { L _ LexSpecial "=" }
+    '.'             { L _ LexSpecial "." }
+    ','             { L _ LexSpecial "," }
+    ':'             { L _ LexSpecial ":" }
+    '<'             { L _ LexSpecial "<" }
+    '>'             { L _ LexSpecial ">" }
+    '|'             { L _ LexSpecial "|" }
+    boolType        { L _ LexTypeIdent "Bool" }
+    natType         { L _ LexTypeIdent "Nat" }
+    stringType      { L _ LexTypeIdent "String" }
+    userType        { L _ LexTypeIdent $$ }
+
+    ident           { L _ LexIdent $$ }
+    nat             { L _ LexNat $$ }
+    string          { L _ LexString $$ }
 
 %monad { P }
 %error { parseError }
@@ -87,15 +91,15 @@ Expr : '(' AppExpr ')'                                      { $2 }
      | succ AppExpr                                         { TermSucc Blank $2 }
      | pred AppExpr                                         { TermPred Blank $2 }
      | RecordExpr '.' ident                                 { TermRecordProjection Blank $1 $3 }
-     | TupExpr '.' nat                                      { TermTupProjection Blank $1 $3 }
+     | TupExpr '.' nat                                      { TermTupProjection Blank $1 (read $3) }
      | VarExpr '.' ident                                    { TermRecordProjection Blank $1 $3 }
-     | VarExpr '.' nat                                      { TermTupProjection Blank $1 $3 }
+     | VarExpr '.' nat                                      { TermTupProjection Blank $1 (read $3) }
      -- Constants
      | TupExpr                                              { $1 }
      | RecordExpr                                           { $1 }
      | true                                                 { TermTrue Blank }
      | false                                                { TermFalse Blank }
-     | nat                                                  { TermNat Blank $1 }
+     | nat                                                  { TermNat Blank (read $1) }
      | string                                               { TermString Blank $1 }
      | VarExpr                                              { $1 }
 
@@ -154,7 +158,9 @@ data PState = PState {
 
 type P a = StateT PState (Either String) a
 
-parseError tok = lift $ Left ("Parse Error: " ++ show tok)
+parseError [] = lift $ Left ("Parse Error: No ; at EOF")
+parseError (tok:toks) = lift $
+    Left ("Parse Error at: " ++ show tok ++ "\n\n" ++ show toks)
 
 storeTypeContext :: String -> TermType -> P ()
 storeTypeContext name ty = do

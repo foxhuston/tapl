@@ -33,21 +33,23 @@ runFile :: String -> IO ()
 runFile fileName = do
     contents <- readFile fileName
     let toks = tokenize contents
-
     -- putStrLn "---"
     -- print toks
     -- putStrLn "---"
 
-    let output = parse toks
-    -- print output
-    -- putStrLn "---"
+    case toks of
+        (Left err) -> putStrLn err
+        (Right toks) -> do
+            let output = parse toks
+            -- print output
+            -- putStrLn "---"
 
-    case output of
-        (Right (forms, PState { context, types, equations })) -> do
-            let ctx' = generateContextFromEquations equations types
-            putStrLn $ showContext ctx'
-            mapM_ (printForm ctx' types equations) forms
-        (Left error) -> putStrLn error
+            case output of
+                (Right (forms, PState { context, types, equations })) -> do
+                    let ctx' = generateContextFromEquations equations types
+                    putStrLn $ showContext ctx'
+                    mapM_ (printForm ctx' types equations) forms
+                (Left error) -> putStrLn error
 
 printForm :: Context -> TypeContext -> EqnContext -> Term -> IO ()
 printForm context typeContext equations term = do

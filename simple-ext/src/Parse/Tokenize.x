@@ -1,92 +1,81 @@
 {
 module Parse.Tokenize (
   Lexeme (..),
+  LexemeClass (..),
   tokenize
 ) where
 
 }
 
-%wrapper "basic"
+%wrapper "monad"
 
-$digit = 0-9                  -- digits
-$alpha = [a-zA-Z]             -- alphabetic characters
+$digit   = 0-9                  -- digits
+
+$large     = [A-Z \xc0-\xd6 \xd8-\xde]
+$small     = [a-z \xdf-\xf6 \xf8-\xff \_]
+$alpha     = [$small $large]
+
 $graphic = $printable
+
+$idchar  = [$alpha $digit \']
+
+$special = [\(\)\,\.\:\<\>\=\[\]\`\|\{\}]
 
 @string = \" ($graphic # \") * \"
 
+@reservedid = 
+  if|then|else|true|false|succ|pred|iszero|let|in|as|of|case|type
+  
+@reservedop =
+  "->" | "\" | ";"
+
+@varid  = $small $idchar*
+@typeid = $large $idchar*
 
 tokens :-
-  $white+                          ;
-  "--".*                           ;
-  if                               { \s -> LexIf }
-  then                             { \s -> LexThen }
-  else                             { \s -> LexElse }
-  true                             { \s -> LexTrue }
-  false                            { \s -> LexFalse }
-  succ                             { \s -> LexSucc }
-  pred                             { \s -> LexPred }
-  iszero                           { \s -> LexIsZero }
-  let                              { \s -> LexLet }
-  in                               { \s -> LexIn }
-  as                               { \s -> LexAs }
-  of                               { \s -> LexOf }
-  case                             { \s -> LexCase }
-  type                             { \s -> LexType }
-  "->"                             { \s -> LexArrow }
-  "\"                              { \s -> LexLambda }
-  "."                              { \s -> LexDot }
-  ","                              { \s -> LexComma }
-  ":"                              { \s -> LexHasType }
-  ";"                              { \s -> LexSep }
-  "("                              { \s -> LexLParen }
-  ")"                              { \s -> LexRParen }
-  "{"                              { \s -> LexLBrace }
-  "}"                              { \s -> LexRBrace }
-  "<"                              { \s -> LexLBracket }
-  ">"                              { \s -> LexRBracket }
-  "="                              { \s -> LexEquals }
-  @string                          { LexString . read }
-  [0-9]+                           { LexNat . read }
-  [a-z][A-Za-z0-9_']*              { LexIdent }
-  [A-Z][A-Za-z0-9_']*              { LexTypeIdent }
+
+<0>  $white+                          ;
+<0>  "--".*                           ;
+<0>  $special                         { mkL LexSpecial }
+<0>  @reservedid                      { mkL LexReservedWord }
+<0>  @reservedop                      { mkL LexReservedOp }
+<0>  @string                          { mkL LexString }
+<0>  [0-9]+                           { mkL LexNat }
+<0>  @varid                           { mkL LexIdent }
+<0>  @typeid                          { mkL LexTypeIdent }
 
 {
 -- Each action has type :: String -> Token
 
+data Lexeme = L AlexPosn LexemeClass String
+  deriving (Show)
+
+mkL :: LexemeClass -> AlexInput -> Int -> Alex Lexeme
+mkL c (p,_,_,str) len = return (L p c (take len str))
+
 -- The token type:
-data Lexeme =
-    LexIf
-  | LexThen
-  | LexElse
-  | LexTrue
-  | LexFalse
-  | LexLambda
-  | LexSep
-  | LexComma
-  | LexArrow
-  | LexDot
-  | LexLet
-  | LexIn
-  | LexCase
-  | LexOf
-  | LexType
-  | LexAs
-  | LexLBracket
-  | LexRBracket
-  | LexLParen
-  | LexRParen
-  | LexLBrace
-  | LexRBrace
-  | LexEquals
-  | LexHasType
-  | LexNat Integer
-  | LexSucc
-  | LexPred
-  | LexIsZero
-  | LexString String
-  | LexIdent String
-  | LexTypeIdent String
+data LexemeClass =
+  LexSpecial
+  | LexReservedWord
+  | LexReservedOp
+  | LexIdent
+  | LexTypeIdent
+  | LexNat
+  | LexString
+  | LEOF
   deriving (Eq,Show)
 
-tokenize = alexScanTokens
+alexEOF = return (L undefined LEOF "")
+
+scanner str = runAlex str $ do
+  let loop toks = do {
+    tok@(L _ cr _) <- alexMonadScan;
+    case cr of
+      LEOF -> return toks
+      _    -> loop $! (toks ++ [tok])
+  }
+
+  loop []
+
+tokenize = scanner
 }
