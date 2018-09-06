@@ -68,7 +68,7 @@ instance Show TermType where
     show (TypeNat)         = "Nat"
     show (TypeBool)        = "Bool"
     show (TypeString)      = "String"
-    show (TypeUser n)      = n
+    show (TypeUser n)      = "|" ++ n ++ "|"
     show (TypeTuple ts)    = "(" ++ intercalate ", " (map show ts) ++ ")"
     show (TypeVariant ts)  = "<" ++ (showRecord ":" ts) ++ ">"
     show (TypeRecord ts)   = "{" ++ (showRecord ":" ts) ++ "}"
@@ -78,7 +78,7 @@ getTypeForName :: TypeContext -> TermType -> TermType
 getTypeForName tc t
     | (TypeUser name) <- t
     , (Just b) <- lookup name tc
-    = b
+    = getTypeForName tc b
 
     | (TypeTuple ts) <- t
     = TypeTuple $ map (getTypeForName tc) ts
@@ -89,23 +89,33 @@ getTypeForName tc t
     | (TypeArrow t1 t2) <- t
     = TypeArrow (getTypeForName tc t1) (getTypeForName tc t2)
 
+    | (TypeVariant ts) <- t
+    = TypeVariant $ map (second (getTypeForName tc)) ts
+
     | otherwise = t
+
+getUserType :: TypeContext -> TermType -> (Maybe TermType)
+getUserType tc t = fmap fst $ find (\(_, b) -> b == t) $ map (first TypeUser) tc
+
+getUserTypeOrType :: TypeContext -> TermType -> TermType
+getUserTypeOrType tc t = fromMaybe t $ getUserType tc t
 
 getNameForType :: TypeContext -> TermType -> TermType
 getNameForType tc t
-    | (Just (a, _)) <- find (\(_, b) -> b == t) $ map (first TypeUser) tc
-    = a
-
     | (TypeTuple ts) <- t
-    = TypeTuple $ map (getNameForType tc) ts
+    = getUserTypeOrType tc $ TypeTuple $ map (getNameForType tc) ts
 
     | (TypeRecord ts) <- t
-    = TypeRecord $ map (second (getNameForType tc)) ts
+    = getUserTypeOrType tc $ TypeRecord $ map (second (getNameForType tc)) ts
 
     | (TypeArrow t1 t2) <- t
-    = TypeArrow (getNameForType tc t1) (getNameForType tc t2)
+    = getUserTypeOrType tc $ TypeArrow (getNameForType tc t1) (getNameForType tc t2)
 
-    | otherwise = t
+    | (TypeVariant ts) <- t
+    = getUserTypeOrType tc $ TypeVariant $ map (second (getNameForType tc)) ts
+
+    | otherwise
+    = getUserTypeOrType tc t
 
 data Binding =
       NameBind

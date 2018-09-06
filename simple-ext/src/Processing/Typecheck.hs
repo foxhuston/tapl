@@ -32,6 +32,7 @@ mapTermTypes :: (TermType -> TermType) -> Term -> Term
 mapTermTypes f t = mapTerm g t
     where g :: Term -> Term
           g (TermAbs i name ty t1) = TermAbs i name (f ty) t1
+          g (TermTag i lab t1 ty)  = TermTag i lab t1 (f ty)
           g t = t
 
 desugarTypes :: TypeContext -> Term -> Term
@@ -46,8 +47,10 @@ desugarBindingType tc (VarBind tt) = VarBind xs
 desugarBindingType _ b = error $ "Can't get context type for " ++ (show b)
 
 typeOf :: Context -> TypeContext -> Term -> TermType
-typeOf ctx tc term = getNameForType tc $ typeof ctx' $ desugarTypes tc term
-    where ctx' = map (second (desugarBindingType tc)) ctx
+typeOf ctx tc term =
+    let !dst  = desugarTypes tc term
+        !ctx' = map (second (desugarBindingType tc)) ctx
+    in getNameForType tc $ typeof ctx' dst
 
 typeof :: Context -> Term -> TermType
 typeof ctx term
@@ -108,6 +111,19 @@ typeof ctx term
     = let ty1 = typeof ctx t1
           ctx' = matchType p ty1
       in typeof (ctx ++ ctx') t2
+
+    | TermTag _ label t1 ty@(TypeVariant ts) <- term
+    = case lookup label ts of
+        (Just tty) -> let tyt1 = typeof ctx t1
+            in if tty == tyt1
+                then ty
+                else error ("Type "
+                            ++ (show tty)
+                            ++ " for label '"
+                            ++ label
+                            ++ "' does not match given type: "
+                            ++ (show tyt1))
+        Nothing -> error ("Could not find label '" ++ label ++ "' in type " ++ (show ty))
 
     | TermVar _ n <- term
     , (Just tv) <- getTypeFromContext ctx n

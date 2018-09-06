@@ -9,7 +9,7 @@ type Addr = <physical:PhysicalAddr, virtual:VirtualAddr>;
 --     in n;
 -- getName { firstlast="Hello", addr="World" };
 
-a = <physical={ firstLast= "Woah, Guy.", addr= "123 dairy lane." }> as Addr;
+a = <physical={ firstlast= "Woah, Guy.", addr= "123 dairy lane." }> as <physical: PhysicalAddr, virtual: VirtualAddr>;
 
 getName = \a:Addr.
     case a of
