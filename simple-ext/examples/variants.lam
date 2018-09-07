@@ -1,3 +1,5 @@
+--                                                                 -*-haskell-*-
+
 -- test = "Hello, World!";
 
 type PhysicalAddr = { firstlast:String, addr:String };
