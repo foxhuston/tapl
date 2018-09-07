@@ -38,6 +38,8 @@ termShift d t = walk 0 t
         walk c (TermTupProjection i t1 n)    = TermTupProjection i (walk c t1) n
         walk c (TermRecord i ts)             = TermRecord i (map (second $ walk c) ts)
         walk c (TermRecordProjection i t1 l) = TermRecordProjection i (walk c t1) l
+        walk c (TermTag i l t1 tt)           = TermTag i l (walk c t1) tt
+        walk c (TermCase i t1 ts)            = TermCase i (walk c t1) (map (second $ walk (c+1)) ts)
         walk _ (TermTrue i)                  = TermTrue i
         walk _ (TermFalse i)                 = TermFalse i
         walk _ (TermString i s)              = TermString i s
@@ -57,6 +59,8 @@ termSub j s (TermTup i ts)                = TermTup i (map (termSub j s) ts)
 termSub j s (TermTupProjection i t1 n)    = TermTupProjection i (termSub j s t1) n
 termSub j s (TermRecord i ts)             = TermRecord i (map (second $ termSub j s) ts)
 termSub j s (TermRecordProjection i t1 l) = TermRecordProjection i (termSub j s t1) l
+termSub j s (TermTag i l t1 tt)           = TermTag i l (termSub j s t1) tt
+termSub j s (TermCase i t1 ts)            = TermCase i (termSub j s t1) (map (second $ termSub (j+1) s) ts)
 termSub _ _ (TermString i s)              = TermString i s
 termSub _ _ (TermTrue i)                  = TermTrue i
 termSub _ _ (TermFalse i)                 = TermFalse i
@@ -179,6 +183,16 @@ eval1 level eqns term
     | (TermRecordProjection i t1 l) <- term
     , (Just t1') <- eval1 (level+1) eqns t1
     = tsid level $ Just $ TermRecordProjection i t1' l
+
+    | (TermTag i s t1 tt) <- term
+    , (Just t1') <- eval1 (level+1) eqns t1
+    = tsid level $ Just $ TermTag i s t1' tt
+
+    | (TermCase i (TermTag _ label v1 tt) bindings) <- term
+    , isValue v1
+    , (Just (_, term)) <- getCaseBindingForLabel bindings label
+    = tsid level $ Just $ termSub 0 v1 term
+
 
     -- Let is like a binder from left to right, without the actual binding...
     | (TermLet i m v1 t2) <- term

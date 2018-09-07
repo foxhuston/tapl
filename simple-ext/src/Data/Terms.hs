@@ -14,6 +14,7 @@ module Data.Terms (
     showTermInContext,
     getIndexFromContext,
     indexToEquation,
+    getCaseBindingForLabel,
     getTypeFromContext,
     getTypeForName,
     getTypeForVariantLabel,
@@ -231,6 +232,11 @@ pickFreshNames ctx xs = foldl' (\(ctx, names) name ->
     let (ctx', name') = pickFreshName ctx name
     in (ctx', name':names)) (ctx, []) xs
 
+getCaseBindingForLabel :: [(CaseTag, Term)] -> String -> Maybe (String, Term)
+getCaseBindingForLabel bindings label =
+    let tt = find ((==label) . caseLabel . fst) bindings
+    in (first caseVar) <$> tt
+
 getMatchNames :: MatchPattern -> [String]
 getMatchNames (MatchVar x) = [x]
 getMatchNames (MatchRecord (r:rs)) = getMatchNames (snd r) ++ (concat $ map (getMatchNames . snd) rs)
@@ -307,4 +313,5 @@ isValue (TermTup _ [])    = True
 isValue (TermString _ _)  = True
 isValue (TermTup _ ts)    = all isValue ts
 isValue (TermRecord _ ts) = all (isValue.snd) ts
+isValue (TermTag _ _ t _) = isValue t
 isValue _                 = False

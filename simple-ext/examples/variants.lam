@@ -12,6 +12,7 @@ type Test = <a:String, b:String>;
 -- getName { firstlast="Hello", addr="World" };
 
 a = <physical={ firstlast= "Woah, Guy.", addr= "123 dairy lane." }> as Addr;
+b = <virtual={ name="Dianne", email="d@example.com" }> as Addr;
 
 getName = \a:Addr.
     case a of
@@ -19,6 +20,7 @@ getName = \a:Addr.
       | <virtual=y> => y.name;
 
 getName a;
+getName b;
 
 
 -- let mkPart=(\c:Nat. \p:Nat. {cost=c, partNo=p})
