@@ -124,16 +124,25 @@ data Binding =
     | VarBind TermType
     deriving (Show)
 
+data VarName =
+      VarName String
+    | WildCard
+    deriving (Eq)
+
+instance Show VarName where 
+    show (VarName n) = n
+    show (WildCard)  = "_"
+
 data MatchPattern =
-      MatchVar String
+      MatchVar VarName
     | MatchRecord [(String, MatchPattern)]
     deriving (Eq)
 
 instance Show MatchPattern where
-    show (MatchVar s) = s
+    show (MatchVar s) = show s
     show (MatchRecord rs) = "{" ++ (showRecord "=" rs) ++ "}"
 
-data CaseTag = CaseTag { caseLabel :: String, caseVar :: String }
+data CaseTag = CaseTag { caseLabel :: String, caseVar :: VarName }
     deriving (Show, Eq)
 
 data Term = 
@@ -142,7 +151,7 @@ data Term =
     | TermIf Info Term Term Term
     | TermLet Info MatchPattern Term Term
     | TermVar Info Int
-    | TermAbs Info String TermType Term
+    | TermAbs Info VarName TermType Term
     | TermApp Info Term Term
     | TermSucc Info Term
     | TermPred Info Term
@@ -157,7 +166,7 @@ data Term =
     | TermRecordProjection Info Term String
     deriving (Show, Eq)
 
-type Context = [(String, Binding)]
+type Context = [(VarName, Binding)]
 type EqnContext = [(String, Term)]
 
 indexToEquation :: EqnContext -> Int -> Term
@@ -204,40 +213,44 @@ mapTerm f term
 contextLength :: Context -> Int
 contextLength = length
 
-indexToName :: Context -> Int -> String
+indexToName :: Context -> Int -> VarName
 indexToName ctx n = fst $ ctx !! ((length ctx) - 1 - n)
 
 getIndexFromContext :: Context -> String -> Maybe Int
-getIndexFromContext ctx name = findIndex (\(s, _) -> name == s) $ reverse ctx
+getIndexFromContext ctx name = findIndex (\(s, _) -> (VarName name) == s) $ reverse ctx
 
 getTypeFromContext :: Context -> Int -> Maybe TermType
 getTypeFromContext ctx x =
     (\(VarBind tt) -> tt) <$> lookup (indexToName ctx x) ctx
 
-addBinding :: Context -> String -> Binding -> Context
+addBinding :: Context -> VarName -> Binding -> Context
 addBinding ctx s b = ctx ++ [(s, b)]
 
 hasVar :: Context -> String -> Bool
 hasVar ctx name = isJust $ getIndexFromContext ctx name
 
-pickFreshName :: Context -> String -> (Context, String)
+pickFreshName :: Context -> VarName -> (Context, VarName)
 pickFreshName ctx x
-    | ctx `hasVar` x
-    = pickFreshName ctx (x ++ "'")
+    | WildCard <- x
+    = (ctx ++ [(VarName "_", NameBind)], x)
+
+    | VarName x <- x
+    , ctx `hasVar` x
+    = pickFreshName ctx (VarName (x ++ "'"))
 
     | otherwise = (ctx ++ [(x, NameBind)], x)
 
-pickFreshNames :: Context -> [String] -> (Context, [String])
+pickFreshNames :: Context -> [VarName] -> (Context, [VarName])
 pickFreshNames ctx xs = foldl' (\(ctx, names) name ->
     let (ctx', name') = pickFreshName ctx name
     in (ctx', name':names)) (ctx, []) xs
 
-getCaseBindingForLabel :: [(CaseTag, Term)] -> String -> Maybe (String, Term)
+getCaseBindingForLabel :: [(CaseTag, Term)] -> String -> Maybe (VarName, Term)
 getCaseBindingForLabel bindings label =
     let tt = find ((==label) . caseLabel . fst) bindings
     in (first caseVar) <$> tt
 
-getMatchNames :: MatchPattern -> [String]
+getMatchNames :: MatchPattern -> [VarName]
 getMatchNames (MatchVar x) = [x]
 getMatchNames (MatchRecord (r:rs)) = getMatchNames (snd r) ++ (concat $ map (getMatchNames . snd) rs)
 
@@ -254,9 +267,9 @@ getTypeForVariantLabel variants label = fromJust $ lookup label variants
 
 showContext :: Context -> String
 showContext = concat . map printEntry
-    where printEntry :: (String, Binding) -> String
-          printEntry (name, VarBind tt) = name ++ ": " ++ show tt ++ "\n\n"
-          printEntry (name, _) = error "Term " ++ name ++ " has no type in context!\n"
+    where printEntry :: (VarName, Binding) -> String
+          printEntry (name, VarBind tt) = show name ++ ": " ++ show tt ++ "\n\n"
+          printEntry (name, _) = error "Term " ++ show name ++ " has no type in context!\n"
 
 showRecordInContext :: String -> Context -> [(String, String)] -> String
 showRecordInContext sep ctx ts = intercalate ", " (map (\(l, s) -> l ++ sep ++ s) ts)
@@ -264,10 +277,10 @@ showRecordInContext sep ctx ts = intercalate ", " (map (\(l, s) -> l ++ sep ++ s
 showTermInContext :: Context -> Term -> String
 showTermInContext ctx (TermAbs _ x ty t1) =
     let (ctx', x') = pickFreshName ctx x in
-        "(λ" ++ x' ++ ": " ++ (show ty) ++ ". " ++ showTermInContext ctx' t1 ++ ")"
+        "(λ" ++ show x' ++ ": " ++ (show ty) ++ ". " ++ showTermInContext ctx' t1 ++ ")"
 showTermInContext ctx (TermApp _ t1 t2) =
     "(" ++ showTermInContext ctx t1 ++ " " ++ showTermInContext ctx t2 ++ ")"
-showTermInContext ctx (TermVar _ n) = indexToName ctx n
+showTermInContext ctx (TermVar _ n) = show $ indexToName ctx n
 showTermInContext ctx (TermIf _ t1 t2 t3) =
     "if " ++ showTermInContext ctx t1
           ++ " then "
@@ -293,7 +306,7 @@ showTermInContext ctx (TermCase _ t1 bindings) = --"case expr"
     in "(case " ++ (showTermInContext ctx t1) ++ " of \n    "
         ++ (intercalate "\n  | " $
                 map (\((ctx', (l, x')), t) ->
-                    "<" ++ l ++ "=" ++ x' ++ "> => " ++
+                    "<" ++ l ++ "=" ++ show x' ++ "> => " ++
                     (showTermInContext ctx' t)) freshTerms)
 
 
