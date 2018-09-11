@@ -67,7 +67,7 @@ termSub _ _ (TermFalse i)                 = TermFalse i
 termSub _ _ t@(TermNat _ _)               = t
 
 
-matchContext :: MatchPattern -> Term -> [(String, Term)]
+matchContext :: MatchPattern -> Term -> [(VarName, Term)]
 matchContext (MatchVar s) t = [(s, t)]
 matchContext (MatchRecord ps) (TermRecord _ ts) =
     case sequence $ getRecordType ps ts of
@@ -75,7 +75,7 @@ matchContext (MatchRecord ps) (TermRecord _ ts) =
         (Just mp) -> concat $ map (uncurry matchContext) mp
 matchContext _ _ = error "Invalid Match!"
 
-numberContext :: [(String, Term)] -> [(Int, Term)]
+numberContext :: [(VarName, Term)] -> [(Int, Term)]
 numberContext xs = zipWith (\n p -> first (const n) p) [0..] xs
 
 getMatchContext :: MatchPattern -> Term -> [(Int, Term)]

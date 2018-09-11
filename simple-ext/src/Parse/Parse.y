@@ -126,13 +126,14 @@ RecordInner : ident '=' AppExpr                             { [($1, $3)] }
             | ident '=' AppExpr ',' RecordInner             { ($1, $3):$5 }
 
 MatchExpr : '{' RecordPattern '}'                           { MatchRecord $2 }
-          | ident                                           {% (storeMatchIdent $1) >> return (MatchVar $1) }
+          | ident                                           {% (storeMatchIdent (VarName $1)) >> return (MatchVar $ VarName $1) }
 
 RecordPattern : ident '=' MatchExpr                         { [($1, $3)] }
               | ident '=' MatchExpr ',' RecordPattern       { ($1, $3):$5 }
 
 
-TypedId : ident ':' Type                                    {% storeAbsIdent $1 $3 }
+TypedId : ident ':' Type                                    {% storeAbsIdent (VarName $1) $3 }
+        -- | wild ':' Type
 
 CaseBranches : CaseBranch                                   { [$1] }
              | CaseBranches '|' CaseBranch                  { ($3 : $1) }
@@ -142,7 +143,7 @@ CaseBranch : CaseBranchTag '=>'
              AppExpr
              PopContext                                     { (CaseTag (fst $1) (snd $1), $4) }
 
-CaseBranchTag : '<' ident PushMatchContext '=' ident '>'    {% (storeMatchIdent $5) >> return ($2, $5) }
+CaseBranchTag : '<' ident PushMatchContext '=' ident '>'    {% (storeMatchIdent (VarName $5)) >> return ($2, (VarName $5)) }
 
 -- Types
 
@@ -201,7 +202,7 @@ storeEquation name term = do
     let eqns = equations pstate
     put $ pstate {
         equations = (name,term) : eqns,
-        context = [(name, NameBind)] : ctx
+        context = [(VarName name, NameBind)] : ctx
     }
     return ()
 
@@ -212,12 +213,18 @@ popContext = do
     put $ traceShowMsg "popContext" $ pstate { context = cs }
     return ()
 
-storeAbsIdent :: String -> TermType -> P (String, TermType)
-storeAbsIdent ident tt = do
+storeAbsIdent :: VarName -> TermType -> P (VarName, TermType)
+storeAbsIdent (WildCard) tt = do
     pstate <- get
     let ctx = context pstate
-    put $ pstate { context = ctx ++ [[(ident, NameBind)]] }
-    return $ (ident, tt)
+    put $ pstate { context = ctx ++ [[]] }
+    return (WildCard, tt)
+
+storeAbsIdent (VarName ident) tt = do
+    pstate <- get
+    let ctx = context pstate
+    put $ pstate { context = ctx ++ [[(VarName ident, NameBind)]] }
+    return (VarName ident, tt)
 
 writeMatchContext :: P ()
 writeMatchContext = do
@@ -232,11 +239,14 @@ pushMatchContext = do
     let cms = matchStack pstate
     put $ traceShowMsg "pushMatchContext" $ pstate { matchStack = []:cms }
 
-storeMatchIdent :: String -> P ()
-storeMatchIdent ident = do
+storeMatchIdent :: VarName -> P ()
+storeMatchIdent (WildCard) = do
+    return ()
+
+storeMatchIdent (VarName ident) = do
     pstate <- get
     let (cms:cs) = matchStack pstate
-    let cms' = cms ++ [(ident, NameBind)]
+    let cms' = cms ++ [(VarName ident, NameBind)]
 
     put $ traceShowMsg "storeMatchIdent" $ pstate { matchStack = cms':cs }
 

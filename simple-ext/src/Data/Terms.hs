@@ -1,26 +1,28 @@
 module Data.Terms (
-    TermType (..),
-    Term(..),
-    CaseTag(..),
-    MatchPattern(..),
-    Info(..),
     Binding(..),
+    CaseTag(..),
     Context(..),
-    TypeContext(..),
     EqnContext(..),
-    mapTerm,
+    Info(..),
+    MatchPattern(..),
+    Term(..),
+    TermType (..),
+    TypeContext(..),
+    VarName(..),
+    
     addBinding,
-    showContext,
-    showTermInContext,
-    getIndexFromContext,
-    indexToEquation,
     getCaseBindingForLabel,
-    getTypeFromContext,
-    getTypeForName,
-    getTypeForVariantLabel,
+    getIndexFromContext,
     getNameForType,
     getRecordType,
-    isValue
+    getTypeForName,
+    getTypeForVariantLabel,
+    getTypeFromContext,
+    indexToEquation,
+    isValue,
+    mapTerm,
+    showContext,
+    showTermInContext
 ) where
 
 import Data.List (findIndex, intercalate, foldl', find)

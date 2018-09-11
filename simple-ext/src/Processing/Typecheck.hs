@@ -26,7 +26,7 @@ generateContextFromEquations eqns tc = gcfe' [] eqns
         gcfe' ctx [] = ctx
         gcfe' ctx ((name, term):eqns) =
             let tt = getNameForType tc $ typeof ctx $ dst term
-            in gcfe' (ctx ++ [(name, VarBind tt)]) eqns
+            in gcfe' (ctx ++ [(VarName name, VarBind tt)]) eqns
 
 mapTermTypes :: (TermType -> TermType) -> Term -> Term
 mapTermTypes f t = mapTerm g t
@@ -130,8 +130,9 @@ typeof ctx term
         (TypeVariant ts) ->
             let subTypes = map (\(tag, term) -> let
                                         label = caseLabel tag
+                                        var = caseVar tag
                                         labelType = getTypeForVariantLabel ts label
-                                        ctx' = addBinding ctx label (VarBind labelType)
+                                        ctx' = addBinding ctx var (VarBind labelType)
                                     in typeof ctx' term
                                 ) bindings
                 headSt = head subTypes
