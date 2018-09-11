@@ -219,7 +219,7 @@ storeAbsIdent :: VarName -> TermType -> P (VarName, TermType)
 storeAbsIdent (WildCard) tt = do
     pstate <- get
     let ctx = context pstate
-    put $ pstate { context = ctx ++ [[]] }
+    put $ pstate { context = ctx ++ [[(WildCard, NameBind)]] }
     return (WildCard, tt)
 
 storeAbsIdent (VarName ident) tt = do
