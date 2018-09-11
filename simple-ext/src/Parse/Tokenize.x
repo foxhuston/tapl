@@ -19,7 +19,7 @@ $graphic = $printable
 
 $idchar  = [$alpha $digit \']
 
-$special = [\(\)\,\.\:\<\>\=\[\]\`\|\{\}]
+$special = [\(\)\,\.\:\<\>\=\[\]\`\|\{\}\_]
 
 @string = \" ($graphic # \") * \"
 

@@ -1,4 +1,4 @@
 -- Sequencing and Wildcards                                        -*-haskell-*-
 
 
-(\y:Nat. \_:Bool. _) 3 false;
+(\y:Nat. \_:Bool. y) 3 false;

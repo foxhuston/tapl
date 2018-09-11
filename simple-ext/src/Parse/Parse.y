@@ -52,6 +52,7 @@ import Debug.Trace
     '<'             { L _ LexSpecial "<" }
     '>'             { L _ LexSpecial ">" }
     '|'             { L _ LexSpecial "|" }
+    '_'             { L _ LexSpecial "_" }
     boolType        { L _ LexTypeIdent "Bool" }
     natType         { L _ LexTypeIdent "Nat" }
     stringType      { L _ LexTypeIdent "String" }
@@ -133,7 +134,7 @@ RecordPattern : ident '=' MatchExpr                         { [($1, $3)] }
 
 
 TypedId : ident ':' Type                                    {% storeAbsIdent (VarName $1) $3 }
-        -- | wild ':' Type
+        | '_' ':' Type                                      {% storeAbsIdent WildCard $3 }
 
 CaseBranches : CaseBranch                                   { [$1] }
              | CaseBranches '|' CaseBranch                  { ($3 : $1) }
@@ -144,6 +145,7 @@ CaseBranch : CaseBranchTag '=>'
              PopContext                                     { (CaseTag (fst $1) (snd $1), $4) }
 
 CaseBranchTag : '<' ident PushMatchContext '=' ident '>'    {% (storeMatchIdent (VarName $5)) >> return ($2, (VarName $5)) }
+              | '<' ident PushMatchContext '=' '_' '>'      {% (storeMatchIdent WildCard) >> return ($2, WildCard) }
 
 -- Types
 
