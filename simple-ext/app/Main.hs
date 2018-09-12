@@ -42,8 +42,8 @@ runFile fileName = do
         (Left err) -> putStrLn err
         (Right toks) -> do
             let output = parse toks
-            -- print output
-            -- putStrLn "---"
+            print output
+            putStrLn "---"
 
             case output of
                 (Right (forms, PState { context, types, equations })) -> do

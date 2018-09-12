@@ -1,8 +1,8 @@
 c = ref 0;
 
-incc = (\x:(). (c := succ (!c); !c));
+incc = (\x:(). c := succ (!c); !c);
 
--- decc = \x:(). (c := pred (!c); !c);
+decc = (\x:(). c := pred (!c); !c);
 
 -- main = incc ()
 
