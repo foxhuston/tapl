@@ -52,21 +52,21 @@ runFile fileName = do
                     -- putStrLn "--"
                     let ctx' = generateContextFromEquations equations' types
                     putStrLn $ showContext ctx'
-                    let (Just mainEqn) = lookup "main" equations'
+                    -- let (Just mainEqn) = lookup "main" equations'
                     -- putStrLn "---mainEqn---"
                     -- print mainEqn
 
-                    printForm ctx' types equations mainEqn
+                    mapM_ (printForm ctx' types equations') forms
                 (Left error) -> putStrLn error
 
 printForm :: Context -> TypeContext -> EqnContext -> Term -> IO ()
 printForm context typeContext equations term = do
     let term' = desugarTerm term
-    -- putStr $ showTermInContext context term'
-    -- putStr ": "
-    -- print $ typeOf context typeContext term'
-    -- putStr "\n= "
-    putStr "main = "
+    putStr $ showTermInContext context term'
+    putStr ": "
+    print $ typeOf context typeContext term'
+    putStr "\n= "
+    -- putStr "main = "
     putStrLn $ showTermInContext context $ eval equations term'
     putStrLn "---\n"
 

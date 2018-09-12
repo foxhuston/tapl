@@ -158,4 +158,4 @@ typeof ctx term
         (TypeArrow ty1' ty2') -> if ty2 == ty1'
             then ty2'
             else error $ "Parameter type mismatch: " ++ (show ty2) ++ " != " ++ (show ty1')
-        _ -> error "Expected Arrow Type"
+        ty -> error $ "Expected Arrow Type; got " ++ (show ty)

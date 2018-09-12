@@ -37,10 +37,13 @@ import Debug.Trace
     case            { L _ LexReservedWord "case" }
     of              { L _ LexReservedWord "of" }
     as              { L _ LexReservedWord "as" }
+    ref             { L _ LexReservedWord "ref" }
     lam             { L _ LexReservedOp "\\" }
+    ':='            { L _ LexReservedOp ":=" }
     '->'            { L _ LexReservedOp "->" }
     '=>'            { L _ LexReservedOp "=>" }
     ';'             { L _ LexReservedOp ";" }
+    '!'             { L _ LexReservedOp "!" }
     '('             { L _ LexSpecial "(" }
     ')'             { L _ LexSpecial ")" }
     '{'             { L _ LexSpecial "{" }
@@ -67,13 +70,13 @@ import Debug.Trace
 
 %%
 
-Program : TopLevelExpression                                { [$1] }
-        | TopLevelExpression Program                        { ($1 : $2) }
+Program : TopLevelExpression ';'                            { [$1] }
+        | TopLevelExpression ';' Program                    { ($1 : $3) }
 
 
 TopLevelExpression : TypeDecl                               { Nothing }
                    | Equation                               { Nothing }
-                --    | AppExpr                                { Just $1 }
+                   | AppExpr                                { Just $1 }
 
 
 TypeDecl : type userType '=' Type                           {% storeTypeContext $2 $4 }
@@ -86,43 +89,69 @@ WriteMatchContext : {- empty -}                             {% writeMatchContext
 AppExpr : AppExpr Expr                                      { TermApp Blank $1 $2 }
         | Expr                                              { $1 }
 
-Expr : '(' AppExpr ')'                                      { $2 }
-     | lam TypedId '.' AppExpr PopContext                   { TermAbs Blank (fst $2) (snd $2) $4 }
-     | if AppExpr then AppExpr else AppExpr                 { TermIf Blank $2 $4 $6 }
+SeqAppExpr : AppExpr ';' SeqAppExpr                         { TermSequence Blank $1 $3}
+           | AppExpr                                        { $1 }
 
-     | let PushMatchContext MatchExpr
-        '=' AppExpr in WriteMatchContext AppExpr
-        PopContext                                          { TermLet Blank $3 $5 $8 }
 
-     | '<' ident '=' AppExpr '>' as Type                    { TermTag Blank $2 $4 $7 }
-     | case AppExpr of CaseBranches                         { TermCase Blank $2 $4 }
-     | Expr ';' Expr                                        { TermSequence Blank $1 $3 }
-     | iszero AppExpr                                       { TermIsZero Blank $2 }
-     | succ AppExpr                                         { TermSucc Blank $2 }
-     | pred AppExpr                                         { TermPred Blank $2 }
-     | RecordExpr '.' ident                                 { TermRecordProjection Blank $1 $3 }
-     | TupExpr '.' nat                                      { TermTupProjection Blank $1 (read $3) }
-     | VarExpr '.' ident                                    { TermRecordProjection Blank $1 $3 }
-     | VarExpr '.' nat                                      { TermTupProjection Blank $1 (read $3) }
-     -- Constants
-     | TupExpr                                              { $1 }
-     | RecordExpr                                           { $1 }
-     | true                                                 { TermTrue Blank }
-     | false                                                { TermFalse Blank }
-     | nat                                                  { TermNat Blank (read $1) }
-     | string                                               { TermString Blank (trimLexString $1) }
-     | VarExpr                                              { $1 }
+Expr : '(' SeqAppExpr ')'                                      { $2 }
+     | LamExpr                                              { $1 }
+     | LetExpr                                              { $1 }
+     | VariantExpr                                          { $1 }
+     | CaseExpr                                             { $1 }
+     | Expr2                                                { $1 }
 
+Expr2 : RefExpr                                             { $1 }
+      | NatExpr                                             { $1 }
+      | RecordExpr                                          { $1 }
+      | TupleExpr                                           { $1 }
+      | BoolExpr                                            { $1 }
+      | StringExpr                                          { $1 }
+      | VarExpr                                             { $1 }
+
+
+LamExpr : lam TypedId '.' SeqAppExpr PopContext                { TermAbs Blank (fst $2) (snd $2) $4 }
+
+LetExpr : let PushMatchContext MatchExpr
+            '=' SeqAppExpr in WriteMatchContext SeqAppExpr
+            PopContext                                      { TermLet Blank $3 $5 $8 }
+
+VariantExpr : '<' ident '=' SeqAppExpr '>' as Type             { TermTag Blank $2 $4 $7 }
+
+CaseExpr : case AppExpr of CaseBranches                     { TermCase Blank $2 $4 }
+
+NatExpr : iszero SeqAppExpr                                    { TermIsZero Blank $2 }
+        | succ SeqAppExpr                                      { TermSucc Blank $2 }
+        | pred SeqAppExpr                                      { TermPred Blank $2 }
+        | nat                                               { TermNat Blank (read $1) }
+
+RecordExpr : RecordExpr '.' ident                           { TermRecordProjection Blank $1 $3 }
+           | VarExpr '.' ident                              { TermRecordProjection Blank $1 $3 }
+           | RecordExpr2                                    { $1 }
+
+TupleExpr : TupExpr                                         { $1 }
+          | TupExpr '.' nat                                 { TermTupProjection Blank $1 (read $3) }
+          | VarExpr '.' nat                                 { TermTupProjection Blank $1 (read $3) }
+
+BoolExpr : if SeqAppExpr then SeqAppExpr else SeqAppExpr             { TermIf Blank $2 $4 $6 }
+         | true                                             { TermTrue Blank }
+         | false                                            { TermFalse Blank }
+
+StringExpr : string                                         { TermString Blank (trimLexString $1) }
+
+
+RefExpr : ref AppExpr                                       { TermRef Blank $2 }
+        | AppExpr ':=' AppExpr                              { TermBecomes Blank $1 $3 }
+        | '!' AppExpr                                       { TermDeref Blank $2 }
 
 VarExpr : ident                                             {% processVar $1 }
 
 TupExpr : '(' TupInner ')'                                  { TermTup Blank $2 }
 
 TupInner : {- empty -}                                      { [] }
-         | AppExpr                                          { [$1] }
-         | AppExpr ',' TupInner                             { $1 : $3 }
+         | SeqAppExpr                                          { [$1] }
+         | SeqAppExpr ',' TupInner                             { $1 : $3 }
 
-RecordExpr : '{' RecordInner '}'                            { TermRecord Blank $2 }
+RecordExpr2 : '{' RecordInner '}'                            { TermRecord Blank $2 }
 
 RecordInner : ident '=' AppExpr                             { [($1, $3)] }
             | ident '=' AppExpr ',' RecordInner             { ($1, $3):$5 }

@@ -35,6 +35,9 @@ data Term =
     | TermRecord Info [(String, Term)]
     | TermRecordProjection Info Term String
     | TermSequence Info Term Term
+    | TermRef Info Term
+    | TermBecomes Info Term Term
+    | TermDeref Info Term
     deriving (Show, Eq)
     
 data Info =
