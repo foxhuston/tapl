@@ -1,4 +1,4 @@
-# untyped-arith
+# simple-ref
 
 To run the tests, run
 
@@ -7,4 +7,4 @@ To run the tests, run
 To run the example program, run
 
         stack build
-        stack exec untyped-lambda-exe examples/a.lam
+        stack exec simple-ref-exe examples/a.lam

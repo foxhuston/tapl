@@ -1,4 +1,4 @@
-# untyped-arith
+# simple-ext
 
 To run the tests, run
 
@@ -7,4 +7,4 @@ To run the tests, run
 To run the example program, run
 
         stack build
-        stack exec untyped-lambda-exe examples/a.lam
+        stack exec simple-ext-exe examples/a.lam

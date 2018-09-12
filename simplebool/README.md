@@ -1,4 +1,4 @@
-# untyped-arith
+# simple-bool
 
 To run the example program:
 

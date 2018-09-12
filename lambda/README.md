@@ -1,4 +1,4 @@
-# untyped-arith
+# untyped-lambda
 
 To run the tests, run
 
