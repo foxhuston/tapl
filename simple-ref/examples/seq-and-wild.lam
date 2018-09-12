@@ -1,0 +1,16 @@
+-- Sequencing and Wildcards                                        -*-haskell-*-
+
+
+-- (\y:Nat. \_:Bool. y) 3 false;
+
+-- a = (\_:(). 3);
+-- b = (\a:Bool. ());
+c = (\_:(). ());
+
+(c (); c (); c (); 17);
+
+(\x:Nat. (); (); x) 4;
+
+(\x:(Nat, Nat). x.1) (2, 3);
+
+-- main = (\x:Nat. ((); (); (); x)) 4;

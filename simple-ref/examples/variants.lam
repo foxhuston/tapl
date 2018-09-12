@@ -1,0 +1,35 @@
+--                                                                 -*-haskell-*-
+
+-- test = "Hello, World!";
+
+type PhysicalAddr = { firstlast:String, addr:String };
+type VirtualAddr  = { name:String, email:String };
+type Addr = <physical:PhysicalAddr, virtual:VirtualAddr>;
+
+type Test = <a:String, b:String>;
+
+-- getName = \a:PhysicalAddr.
+--     let { firstlast=n } = a
+--     in n;
+-- getName { firstlast="Hello", addr="World" };
+
+a = <physical={ firstlast= "Woah, Guy.", addr= "123 dairy lane." }> as Addr;
+b = <virtual={ name="Dianne", email="d@example.com" }> as Addr;
+
+getName = \a:Addr.
+    case a of
+        <physical=x> => x.firstlast
+      | <virtual=y> => y.name;
+
+getName a;
+getName b;
+
+
+-- let mkPart=(\c:Nat. \p:Nat. {cost=c, partNo=p})
+-- in let {cost=x} = mkPart 2 345
+-- in succ x;
+
+-- let getName = (\a:PhysicalAddr. let {firstlast=n} = a in n)
+-- in getName { firstlast="Hello", addr="World" };
+
+-- (\x:Nat. let a = x in a) 3;
