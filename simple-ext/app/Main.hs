@@ -3,6 +3,7 @@
 module Main where
 
 import System.Environment (getArgs)
+import Data.Bifunctor (second)
 
 import Lib
 
@@ -41,22 +42,30 @@ runFile fileName = do
         (Left err) -> putStrLn err
         (Right toks) -> do
             let output = parse toks
-            -- print output
-            -- putStrLn "---"
+            print output
+            putStrLn "---"
 
             case output of
                 (Right (forms, PState { context, types, equations })) -> do
-                    let ctx' = generateContextFromEquations equations types
+                    let equations' = map (second desugarTerm) equations
+                    print equations'
+                    putStrLn "--"
+                    let ctx' = generateContextFromEquations equations' types
                     putStrLn $ showContext ctx'
-                    mapM_ (printForm ctx' types equations) forms
+                    let (Just mainEqn) = lookup "main" equations'
+                    -- putStrLn "---mainEqn---"
+                    -- print mainEqn
+
+                    printForm ctx' types equations mainEqn
                 (Left error) -> putStrLn error
 
 printForm :: Context -> TypeContext -> EqnContext -> Term -> IO ()
 printForm context typeContext equations term = do
-    putStr $ showTermInContext context term
+    let term' = desugarTerm term
+    putStr $ showTermInContext context term'
     putStr ": "
-    print $ typeOf context typeContext term
+    print $ typeOf context typeContext term'
     putStr "\n= "
-    putStrLn $ showTermInContext context $ eval equations term
+    putStrLn $ showTermInContext context $ eval equations term'
     putStrLn "---\n"
 

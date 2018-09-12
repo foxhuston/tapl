@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5832f699637c402b1a2d0b7ab8320ac0f71dacba07dc48afe6197ad41bb68207
+-- hash: 21e8dd684d11aad532e86ac4cc1734f2813a230970586e2f734e1cf4cafd0cbf
 
 name:           simple-ext
 version:        0.1.0.0
@@ -27,6 +27,8 @@ source-repository head
 library
   exposed-modules:
       Data.Terms
+      Data.Terms.Terms
+      Data.Terms.Utils
       Lib
       Parse.Parse
       Parse.Tokenize

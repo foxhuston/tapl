@@ -1,18 +1,19 @@
 module Lib
 (
     Context,
-    TypeContext,
     EqnContext,
-    Term,
     PState(..),
+    Term,
+    TypeContext,
+    desugarTerm,
+    desugarTypes,
+    eval,
+    generateContextFromEquations,
     parse,
-    tokenize,
     showContext,
     showTermInContext,
-    eval,
-    typeOf,
-    desugarTypes,
-    generateContextFromEquations
+    tokenize,
+    typeOf
 ) where
 
 import Data.Terms

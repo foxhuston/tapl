@@ -67,13 +67,13 @@ import Debug.Trace
 
 %%
 
-Program : TopLevelExpression ';'                            { [$1] }
-        | TopLevelExpression ';' Program                    { ($1 : $3) }
+Program : TopLevelExpression                                { [$1] }
+        | TopLevelExpression Program                        { ($1 : $2) }
 
 
 TopLevelExpression : TypeDecl                               { Nothing }
                    | Equation                               { Nothing }
-                   | AppExpr                                { Just $1 }
+                --    | AppExpr                                { Just $1 }
 
 
 TypeDecl : type userType '=' Type                           {% storeTypeContext $2 $4 }
@@ -96,6 +96,7 @@ Expr : '(' AppExpr ')'                                      { $2 }
 
      | '<' ident '=' AppExpr '>' as Type                    { TermTag Blank $2 $4 $7 }
      | case AppExpr of CaseBranches                         { TermCase Blank $2 $4 }
+     | Expr ';' Expr                                        { TermSequence Blank $1 $3 }
      | iszero AppExpr                                       { TermIsZero Blank $2 }
      | succ AppExpr                                         { TermSucc Blank $2 }
      | pred AppExpr                                         { TermPred Blank $2 }
