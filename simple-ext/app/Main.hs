@@ -42,14 +42,14 @@ runFile fileName = do
         (Left err) -> putStrLn err
         (Right toks) -> do
             let output = parse toks
-            print output
-            putStrLn "---"
+            -- print output
+            -- putStrLn "---"
 
             case output of
                 (Right (forms, PState { context, types, equations })) -> do
                     let equations' = map (second desugarTerm) equations
-                    print equations'
-                    putStrLn "--"
+                    -- print equations'
+                    -- putStrLn "--"
                     let ctx' = generateContextFromEquations equations' types
                     putStrLn $ showContext ctx'
                     let (Just mainEqn) = lookup "main" equations'
@@ -62,10 +62,11 @@ runFile fileName = do
 printForm :: Context -> TypeContext -> EqnContext -> Term -> IO ()
 printForm context typeContext equations term = do
     let term' = desugarTerm term
-    putStr $ showTermInContext context term'
-    putStr ": "
-    print $ typeOf context typeContext term'
-    putStr "\n= "
+    -- putStr $ showTermInContext context term'
+    -- putStr ": "
+    -- print $ typeOf context typeContext term'
+    -- putStr "\n= "
+    putStr "main = "
     putStrLn $ showTermInContext context $ eval equations term'
     putStrLn "---\n"
 

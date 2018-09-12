@@ -8,7 +8,7 @@ module Data.Terms.Terms (
     Term(..),
     TermType (..),
     TypeContext(..),
-    VarName(..),
+    VarName(..)
 )
 where
 
