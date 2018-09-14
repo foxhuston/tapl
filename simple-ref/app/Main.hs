@@ -42,14 +42,16 @@ runFile fileName = do
         (Left err) -> putStrLn err
         (Right toks) -> do
             let output = parse toks
-            print output
-            putStrLn "---"
+            -- print output
+            -- putStrLn "---"
 
             case output of
                 (Right (forms, PState { context, types, equations })) -> do
+                    mapM_ print equations
+                    putStrLn "---"
                     let equations' = map (second desugarTerm) equations
-                    -- print equations'
-                    -- putStrLn "--"
+                    mapM_ print equations'
+                    putStrLn "--"
                     let ctx' = generateContextFromEquations equations' types
                     putStrLn $ showContext ctx'
                     -- let (Just mainEqn) = lookup "main" equations'

@@ -60,6 +60,7 @@ data TermType =
     | TypeTuple [TermType]
     | TypeRecord [(String, TermType)]
     | TypeVariant [(String, TermType)]
+    | TypeRef TermType
     | TypeUser String
     | TypeArrow TermType TermType
     deriving (Eq)
@@ -70,11 +71,13 @@ instance Show TermType where
     show (TypeNat)         = "Nat"
     show (TypeBool)        = "Bool"
     show (TypeString)      = "String"
+    show (TypeRef t)       = "Ref " ++ show t
     show (TypeUser n)      = n
     show (TypeTuple ts)    = "(" ++ intercalate ", " (map show ts) ++ ")"
     show (TypeVariant ts)  = "<" ++ (showRecord ":" ts) ++ ">"
     show (TypeRecord ts)   = "{" ++ (showRecord ":" ts) ++ "}"
     show (TypeArrow t1 t2) = (show t1) ++ "->" ++ (show t2) 
+
 data Binding =
       NameBind
     | VarBind TermType

@@ -7,7 +7,7 @@ module Parse.Parse (
 ) where
 
 import Data.Maybe (isJust, fromJust)
-import Data.Bifunctor (first)
+import Data.Bifunctor (first, second)
 
 import Parse.Tokenize
 import Data.Terms
@@ -93,12 +93,16 @@ SeqAppExpr : AppExpr ';' SeqAppExpr                         { TermSequence Blank
            | AppExpr                                        { $1 }
 
 
-Expr : '(' SeqAppExpr ')'                                      { $2 }
-     | LamExpr                                              { $1 }
-     | LetExpr                                              { $1 }
-     | VariantExpr                                          { $1 }
-     | CaseExpr                                             { $1 }
-     | Expr2                                                { $1 }
+Expr : SeqExpr                                              { $1 }
+     | Expr1                                                { $1 }
+
+SeqExpr : '(' SeqAppExpr ')'                                { $2 }
+        | Expr2                                             { $1 }
+
+Expr1 : LamExpr                                              { $1 }
+      | LetExpr                                              { $1 }
+      | VariantExpr                                          { $1 }
+      | CaseExpr                                             { $1 }
 
 Expr2 : RefExpr                                             { $1 }
       | NatExpr                                             { $1 }
@@ -140,8 +144,8 @@ StringExpr : string                                         { TermString Blank (
 
 
 RefExpr : ref AppExpr                                       { TermRef Blank $2 }
-        | AppExpr ':=' AppExpr                              { TermBecomes Blank $1 $3 }
-        | '!' AppExpr                                       { TermDeref Blank $2 }
+        | VarExpr ':=' AppExpr                              { TermBecomes Blank $1 $3 }
+        | '!' SeqExpr                                       { TermDeref Blank $2 }
 
 VarExpr : ident                                             {% processVar $1 }
 
@@ -293,8 +297,11 @@ processVar ident = do
 unMaybeFirst :: ([Maybe a], b) -> ([a], b)
 unMaybeFirst = first (map fromJust . filter isJust)
 
+revEqns :: PState -> PState
+revEqns p@(PState { equations }) = p { equations = reverse equations }
+
 parse' :: [Lexeme] -> Either String ([Maybe Term], PState)
-parse' l = runStateT (parseProgram l) (PState [] [] [] [])
+parse' l = second revEqns <$> runStateT (parseProgram l) (PState [] [] [] [])
 
 parse l = unMaybeFirst <$> parse' l
 }

@@ -137,6 +137,15 @@ mapTerm f term
     | (TermRecordProjection i t1 l) <- term
     = f (TermRecordProjection i (mapTerm f t1) l)
 
+    | (TermRef i t1) <- term
+    = f (TermRef i (mapTerm f t1))
+
+    | (TermBecomes i t1 t2) <- term
+    = f (TermBecomes i (mapTerm f t1) (mapTerm f t2))
+
+    | (TermDeref i t1) <- term
+    = f (TermDeref i (mapTerm f t1))
+
     | t <- term
     = f t
 
@@ -257,4 +266,6 @@ isValue (TermString _ _)  = True
 isValue (TermTup _ ts)    = all isValue ts
 isValue (TermRecord _ ts) = all (isValue.snd) ts
 isValue (TermTag _ _ t _) = isValue t
+isValue (TermDeref _ t)   = isValue t
+isValue (TermRef _ t)     = isValue t
 isValue _                 = False
