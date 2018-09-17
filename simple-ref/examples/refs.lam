@@ -1,8 +1,12 @@
+-- x = (\x:Bool->Bool. x) (\y:Bool. y);
+
+-- y = (\x:(Nat, Nat). succ (x.1)) (2, 3);
+
 c = ref 0;
 
-incc = (\x:(). c := succ (!c); !c);
+decc = \_:(). (c := pred !c; !c);
 
--- decc = (\x:(). c := pred (!c); !c);
+incc = \_:(). (c := succ !c; !c);
 
 -- main = incc ()
 
