@@ -47,17 +47,24 @@ runFile fileName = do
 
             case output of
                 (Right (forms, PState { context, types, equations })) -> do
-                    mapM_ print equations
-                    putStrLn "---"
+                    -- putStrLn "-- Equations --"
+                    -- mapM_ print equations
+
+                    -- putStrLn "-- Context --"
+                    -- print context
+
                     let equations' = map (second desugarTerm) equations
-                    mapM_ print equations'
-                    putStrLn "--"
+                    -- putStrLn "-- Desugared --"
+                    -- mapM_ print equations'
+
                     let ctx' = generateContextFromEquations equations' types
-                    putStrLn $ showContext ctx'
+                    putStrLn "-- Eqn Context --"
+                    putStrLn $ showContext $ reverse ctx'
                     -- let (Just mainEqn) = lookup "main" equations'
                     -- putStrLn "---mainEqn---"
                     -- print mainEqn
 
+                    putStrLn "-- Evaluations --"
                     mapM_ (printForm ctx' types equations') forms
                 (Left error) -> putStrLn error
 

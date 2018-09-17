@@ -21,7 +21,7 @@ matchType (MatchRecord ps) (TypeRecord ts) =
 matchType p t = error $ "Invalid Match: " ++ (show p) ++ " for type " ++ (show t)
 
 generateContextFromEquations :: EqnContext -> TypeContext -> Context
-generateContextFromEquations eqns tc = gcfe' [] $ tt "gcfe" eqns
+generateContextFromEquations eqns tc = gcfe' [] $ eqns
     where
         dst = desugarTypes tc
         st = sugarTypes tc
@@ -29,7 +29,7 @@ generateContextFromEquations eqns tc = gcfe' [] $ tt "gcfe" eqns
         gcfe' ctx [] = ctx
         gcfe' ctx ((name, term):eqns) =
             let tt = getNameForType tc $ typeof ctx $ dst term
-            in gcfe' (ctx ++ [(VarName name, VarBind tt)]) eqns
+            in gcfe' ((VarName name, VarBind tt) : ctx) eqns
 
 mapTermTypes :: (TermType -> TermType) -> Term -> Term
 mapTermTypes f t = mapTerm g t
@@ -102,7 +102,7 @@ typeof ctx term
                 TypeTuple []
             else
                 error $ "RHS of := should be " ++ show ty1'
-        _ -> error "LHS of := must be a ref type!"
+        ty1' -> error $ "LHS of := must be a ref type! " ++ show ty1' ++ "\n\n CTX " ++ show ctx
 
     | TermRef _ t1 <- term
     = TypeRef $ typeof ctx t1
@@ -165,7 +165,7 @@ typeof ctx term
         t -> error $ "t must have type variant in case t of ...; found " ++ (show t)
 
     | TermVar _ n <- term
-    , (Just tv) <- getTypeFromContext (tt "tv ctx" ctx) n
+    , (Just tv) <- getTypeFromContext ctx n
     = tv
 
     | TermAbs _ x ty1 t2 <- term
