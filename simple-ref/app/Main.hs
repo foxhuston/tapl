@@ -47,8 +47,8 @@ runFile fileName = do
 
             case output of
                 (Right (forms, PState { context, types, equations })) -> do
-                    putStrLn "-- Equations --"
-                    mapM_ print equations
+                    -- putStrLn "-- Equations --"
+                    -- mapM_ print equations
 
                     -- putStrLn "-- Context --"
                     -- print context
@@ -63,21 +63,28 @@ runFile fileName = do
                     putStrLn "-- Eqn Context --"
                     putStrLn $ showContext $ reverse ctx'
 
-                    putStrLn "-- Heap --"
-                    print heap
+                    -- putStrLn "-- Heap --"
+                    -- print heap
 
-                    putStrLn "-- Evaled Equations --"
-                    mapM_ print evalEqn
+                    -- putStrLn "-- Evaled Equations --"
+                    -- mapM_ print evalEqn
 
                     -- let (Just mainEqn) = lookup "main" equations'
                     -- putStrLn "---mainEqn---"
                     -- print mainEqn
 
                     putStrLn "-- Evaluations --"
-                    mapM_ (printForm ctx' types evalEqn heap) forms
+                    printForms ctx' types evalEqn heap forms
                 (Left error) -> putStrLn error
 
-printForm :: Context -> TypeContext -> EqnContext -> Heap -> Term -> IO ()
+
+printForms :: Context -> TypeContext -> EqnContext -> Heap -> [Term] -> IO ()
+printForms _ _ _ _ [] = return ()
+printForms context typeContext equations heap (t:ts) = do
+    h' <- printForm context typeContext equations heap t
+    printForms context typeContext equations h' ts
+
+printForm :: Context -> TypeContext -> EqnContext -> Heap -> Term -> IO Heap
 printForm context typeContext equations heap term = do
     let term' = desugarTerm term
     putStr $ showTermInContext context term'
@@ -85,7 +92,8 @@ printForm context typeContext equations heap term = do
     print $ typeOf context typeContext term'
     putStr "\n= "
     -- putStr "main = "
-    let (term, _) = eval equations heap term' 
+    let (term, h') = eval equations heap term' 
     putStrLn $ showTermInContext context $ term
     putStrLn "---\n"
+    return h'
 

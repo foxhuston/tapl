@@ -226,6 +226,7 @@ showTermInContext ctx (TermIf _ t1 t2 t3) =
           ++ showTermInContext ctx t2
           ++ " else "
           ++ showTermInContext ctx t3
+showTermInContext ctx (TermEquals _ t1 t2) = "(equals " ++ showTermInContext ctx t1 ++ ", " ++ showTermInContext ctx t2 ++ ")"
 showTermInContext ctx (TermSucc _ t1) = "(succ " ++ showTermInContext ctx t1 ++ ")"
 showTermInContext ctx (TermPred _ t1) = "(pred " ++ showTermInContext ctx t1 ++ ")"
 showTermInContext ctx (TermIsZero _ t1) = "(iszero " ++ showTermInContext ctx t1 ++ ")"
@@ -256,7 +257,7 @@ showTermInContext _ (TermFalse _) = "false"
 
 showTermInContext ctx (TermRef _ t) = "ref " ++ showTermInContext ctx t
 showTermInContext ctx (TermDeref _ t) = "!" ++ showTermInContext ctx t
-showTermInContext ctx (TermBecomes _ t1 t2) = showTermInContext ctx t1 ++ " := " ++ showTermInContext ctx t2
+showTermInContext ctx (TermBecomes _ t1 t2) = "(" ++ showTermInContext ctx t1 ++ " := " ++ showTermInContext ctx t2 ++ ")"
 showTermInContext ctx (TermLoc l) = "#LOC[" ++ show l ++ "]"
 
 showTermInContext _ t = error $ "Trying to show: " ++ (show t)
@@ -268,6 +269,7 @@ isValue (TermFalse _)     = True
 isValue (TermNat _ _)     = True
 isValue (TermTup _ [])    = True
 isValue (TermString _ _)  = True
+isValue (TermLoc _)       = True
 isValue (TermTup _ ts)    = all isValue ts
 isValue (TermRecord _ ts) = all (isValue.snd) ts
 isValue (TermTag _ _ t _) = isValue t

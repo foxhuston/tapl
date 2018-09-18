@@ -38,6 +38,7 @@ import Debug.Trace
     of              { L _ LexReservedWord "of" }
     as              { L _ LexReservedWord "as" }
     ref             { L _ LexReservedWord "ref" }
+    equals          { L _ LexReservedWord "equals" }
     lam             { L _ LexReservedOp "\\" }
     ':='            { L _ LexReservedOp ":=" }
     '->'            { L _ LexReservedOp "->" }
@@ -59,6 +60,7 @@ import Debug.Trace
     boolType        { L _ LexTypeIdent "Bool" }
     natType         { L _ LexTypeIdent "Nat" }
     stringType      { L _ LexTypeIdent "String" }
+    refType         { L _ LexTypeIdent "Ref" }
     userType        { L _ LexTypeIdent $$ }
 
     ident           { L _ LexIdent $$ }
@@ -99,6 +101,7 @@ Expr : '(' SeqExpr ')'                                      { $2 }
      | RefExpr                                              { $1 }
      | NatExpr                                              { $1 }
      | TupleExpr                                            { $1 }
+     | BoolExpr                                             { $1 }
      | Vals                                                 { $1 }
 
 
@@ -140,7 +143,7 @@ Vals : LamExpr                                              { $1 }
 --       | VarExpr                                             { $1 }
 
 
-LamExpr : lam TypedId '.' Expr PopContext                { TermAbs Blank (fst $2) (snd $2) $4 }
+LamExpr : lam TypedId '.' AppExpr PopContext                { TermAbs Blank (fst $2) (snd $2) $4 }
 
 LetExpr : let PushMatchContext MatchExpr
             '=' Expr in WriteMatchContext Expr
@@ -161,6 +164,7 @@ TupleExpr : TupVal '.' nat                                  { TermTupProjection 
           | VarExpr '.' nat                                 { TermTupProjection Blank $1 (read $3) }
 
 BoolExpr : if AppExpr then AppExpr else AppExpr             { TermIf Blank $2 $4 $6 }
+         | equals Expr Expr                                 { TermEquals Blank $2 $3 }
          | true                                             { TermTrue Blank }
          | false                                            { TermFalse Blank }
 
@@ -209,17 +213,18 @@ CaseBranchTag : '<' ident PushMatchContext '=' ident '>'    {% (storeMatchIdent 
 
 -- Types
 
-Type : Type '->' Type                                       { TypeArrow $1 $3 }
+Type : '(' Type ')'                                         { $2 }
+     | Type '->' Type                                       { TypeArrow $1 $3 }
      | '(' TupleType ')'                                    { TypeTuple $2 }
      | '{' RecordType '}'                                   { TypeRecord $2 }
      | '<' RecordType '>'                                   { TypeVariant $2 }
+     | refType Type                                         { TypeRef $2 }
      | boolType                                             { TypeBool }
      | natType                                              { TypeNat }
      | stringType                                           { TypeString }
      | userType                                             { TypeUser $1 }
 
 TupleType : {- empty -}                                     { [] }
-        --   | Type                                            { [$1] }
           | Type ',' TupleType                              { $1 : $3 }
           | Type ',' Type                                   { [$1, $3] }
 
@@ -280,13 +285,13 @@ storeAbsIdent :: VarName -> TermType -> P (VarName, TermType)
 storeAbsIdent (WildCard) tt = do
     pstate <- get
     let ctx = context pstate
-    put $ pstate { context = ctx ++ [[(WildCard, NameBind)]] }
+    put $ traceShowMsg "storeAbsIdent wc" $ pstate { context = ctx ++ [[(WildCard, NameBind)]] }
     return (WildCard, tt)
 
 storeAbsIdent (VarName ident) tt = do
     pstate <- get
     let ctx = context pstate
-    put $ pstate { context = ctx ++ [[(VarName ident, NameBind)]] }
+    put $ traceShowMsg ("storeAbsIdent " ++ ident) $ pstate { context = ctx ++ [[(VarName ident, NameBind)]] }
     return (VarName ident, tt)
 
 writeMatchContext :: P ()

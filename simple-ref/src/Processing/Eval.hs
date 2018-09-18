@@ -38,7 +38,7 @@ generateHeapFromContext e = ghfc' e [] S.empty
           ghfc' [] e h = (h, e)
           ghfc' (e:es) ctx h =
             let (e', h') = eval ctx h (snd e)
-            in ghfc' es (ctx ++ [(fst e, e')]) (h >< h')
+            in ghfc' es (ctx ++ [(fst e, e')]) h'
 
 matchContext :: MatchPattern -> Term -> [(VarName, Term)]
 matchContext (MatchVar s) t = [(s, t)]
@@ -99,6 +99,20 @@ eval1 level eqns heap term
 
     | (TermIf _ (TermFalse _) _ t3) <- term
     = tsid level $ Just (t3, heap)
+
+    | (TermEquals i t1 t2) <- term
+    , isValue t1
+    , isValue t2
+    = tsid level $ Just $ (if t1 == t2 then TermTrue i else TermFalse i, heap)
+
+    | (TermEquals i v1 t2) <- term
+    , isValue v1
+    , (Just (t2', h')) <- eval1 (level+1) eqns heap t2
+    = tsid level $ Just (TermEquals i v1 t2', h')
+
+    | (TermEquals i t1 t2) <- term
+    , (Just (t1', h')) <- eval1 (level+1) eqns heap t1
+    = tsid level $ Just (TermEquals i t1' t2, h')
 
     | (TermSucc i t1) <- term
     , (Just (t1', h')) <- eval1 (level+1) eqns heap t1
@@ -186,6 +200,20 @@ eval1 level eqns heap term
     , not $ isValue t1
     , (Just (t1', h')) <- eval1 (level+1) eqns heap t1
     = tsid level $ Just (TermDeref i t1', h')
+
+    | (TermBecomes i (TermLoc l) v1) <- term
+    , isValue v1
+    = let h' = S.update l v1 heap
+      in Just (TermTup i [], h')
+
+    | (TermBecomes i v1 t2) <- term
+    , isValue v1
+    , (Just (t2', h')) <- eval1 (level+1) eqns heap t2
+    = tsid level $ Just (TermBecomes i v1 t2', h')
+
+    | (TermBecomes i t1 t2) <- term
+    , (Just (t1', h')) <- eval1 (level+1) eqns heap t1
+    = tsid level $ Just (TermBecomes i t1' t2, h')
 
     -- Let is like a binder from left to right, without the actual binding...
     | (TermLet i m v1 t2) <- term

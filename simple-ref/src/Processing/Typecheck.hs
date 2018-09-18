@@ -120,6 +120,13 @@ typeof ctx term
             else error "Branches of Conditional have different Types"
       else error "Guard of conditional not a boolean"
 
+    | TermEquals _ t1 t2 <- term
+    = let ty1 = typeof ctx t1
+          ty2 = typeof ctx t2
+      in if ty1 == TypeNat && ty2 == TypeNat
+         then TypeBool
+         else error $ "Both terms of equals must be of type Nat; got " ++ show t1 ++ ", " ++ show t2
+
     | TermRecord _ ts <- term
     = TypeRecord $ map (second $ typeof ctx) ts
 

@@ -31,6 +31,7 @@ termShift d t = walk 0 t
         walk _ (TermFalse i)                 = TermFalse i
         walk _ (TermString i s)              = TermString i s
         walk _ t@(TermNat _ _)               = t
+        walk _ t@(TermLoc _)                 = t
         walk _ t                             = error ("Attempt to shift " ++ (show t))
 
 termSub :: Int -> Term -> Term -> Term
@@ -55,3 +56,5 @@ termSub _ _ (TermString i s)              = TermString i s
 termSub _ _ (TermTrue i)                  = TermTrue i
 termSub _ _ (TermFalse i)                 = TermFalse i
 termSub _ _ t@(TermNat _ _)               = t
+termSub _ _ t@(TermLoc _)                 = t
+termSub _ _ t                             = error $ "Attempt to sub " ++ show t

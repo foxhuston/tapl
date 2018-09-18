@@ -19,6 +19,7 @@ data Term =
       TermTrue Info
     | TermFalse Info
     | TermIf Info Term Term Term
+    | TermEquals Info Term Term
     | TermLet Info MatchPattern Term Term
     | TermVar Info Int
     | TermAbs Info VarName TermType Term
