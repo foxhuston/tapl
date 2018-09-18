@@ -58,24 +58,34 @@ runFile fileName = do
                     -- mapM_ print equations'
 
                     let ctx' = generateContextFromEquations equations' types
+                    let (heap, evalEqn) = generateHeapFromContext (reverse equations') []
+
                     putStrLn "-- Eqn Context --"
                     putStrLn $ showContext $ reverse ctx'
+
+                    putStrLn "-- Heap --"
+                    print heap
+
+                    putStrLn "-- Evaled Equations --"
+                    mapM_ print evalEqn
+
                     -- let (Just mainEqn) = lookup "main" equations'
                     -- putStrLn "---mainEqn---"
                     -- print mainEqn
 
                     putStrLn "-- Evaluations --"
-                    mapM_ (printForm ctx' types equations') forms
+                    mapM_ (printForm ctx' types evalEqn heap) forms
                 (Left error) -> putStrLn error
 
-printForm :: Context -> TypeContext -> EqnContext -> Term -> IO ()
-printForm context typeContext equations term = do
+printForm :: Context -> TypeContext -> EqnContext -> Heap -> Term -> IO ()
+printForm context typeContext equations heap term = do
     let term' = desugarTerm term
     putStr $ showTermInContext context term'
     putStr ": "
     print $ typeOf context typeContext term'
     putStr "\n= "
     -- putStr "main = "
-    putStrLn $ showTermInContext context $ eval equations term'
+    let (term, _) = eval equations heap term' 
+    putStrLn $ showTermInContext context $ term
     putStrLn "---\n"
 

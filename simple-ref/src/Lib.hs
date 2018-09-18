@@ -2,6 +2,7 @@ module Lib
 (
     Context,
     EqnContext,
+    Heap,
     PState(..),
     Term,
     TypeContext,
@@ -9,6 +10,7 @@ module Lib
     desugarTypes,
     eval,
     generateContextFromEquations,
+    generateHeapFromContext,
     parse,
     showContext,
     showTermInContext,

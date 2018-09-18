@@ -1,5 +1,8 @@
 module Processing.Eval (
-    eval
+    Heap(..),
+
+    eval,
+    generateHeapFromContext
 ) where
 
 import Data.List
@@ -17,14 +20,22 @@ tt msg x = trace (msg ++ ": " ++ (show x)) x
 -- tt _ x = x
 
 tsid :: Show a => Int -> a -> a
-tsid n a = trace ((concat $ map (const "  ") [1..n]) ++ (show a)) a
--- tsid _ a = a
+-- tsid n a = trace ((concat $ map (const "  ") [1..n]) ++ (show a)) a
+tsid _ a = a
 
-eval :: EqnContext -> Term -> Term
-eval eqns t = evalLoop [] t
-    where evalLoop h t = case eval1 0 eqns h t of
-                            Just (t', h') -> evalLoop h' t'
-                            Nothing -> t
+eval :: EqnContext -> Heap -> Term -> (Term, Heap)
+eval eqns h t = 
+    case eval1 0 eqns h t of
+        Just (t', h') -> eval eqns h' t'
+        Nothing -> (t, h)
+
+generateHeapFromContext :: EqnContext -> Heap -> (Heap, EqnContext)
+generateHeapFromContext e h = ghfc' e [] h
+    where ghfc' :: EqnContext -> EqnContext -> Heap -> (Heap, EqnContext)
+          ghfc' [] e h = (h, e)
+          ghfc' (e:es) ctx h =
+            let (e', h') = eval ctx h (snd e)
+            in ghfc' es (ctx ++ [(fst e, e')]) (h ++ h')
 
 matchContext :: MatchPattern -> Term -> [(VarName, Term)]
 matchContext (MatchVar s) t = [(s, t)]
