@@ -5,7 +5,7 @@ module Processing.Eval (
     generateHeapFromContext
 ) where
 
-import Data.List
+import Data.List (partition)
 import Data.Bifunctor
 
 import Data.Terms
@@ -13,7 +13,10 @@ import Data.Terms.Utils
 
 import Debug.Trace
 
-type Heap = [Term]
+import qualified Data.Sequence as S
+import Data.Sequence ((|>), (><))
+
+type Heap = S.Seq Term
 
 tt :: Show a => String -> a -> a
 tt msg x = trace (msg ++ ": " ++ (show x)) x
@@ -29,13 +32,13 @@ eval eqns h t =
         Just (t', h') -> eval eqns h' t'
         Nothing -> (t, h)
 
-generateHeapFromContext :: EqnContext -> Heap -> (Heap, EqnContext)
-generateHeapFromContext e h = ghfc' e [] h
+generateHeapFromContext :: EqnContext -> (Heap, EqnContext)
+generateHeapFromContext e = ghfc' e [] S.empty
     where ghfc' :: EqnContext -> EqnContext -> Heap -> (Heap, EqnContext)
           ghfc' [] e h = (h, e)
           ghfc' (e:es) ctx h =
             let (e', h') = eval ctx h (snd e)
-            in ghfc' es (ctx ++ [(fst e, e')]) (h ++ h')
+            in ghfc' es (ctx ++ [(fst e, e')]) (h >< h')
 
 matchContext :: MatchPattern -> Term -> [(VarName, Term)]
 matchContext (MatchVar s) t = [(s, t)]
@@ -167,7 +170,7 @@ eval1 level eqns heap term
     | (TermRef i v1) <- term
     , isValue v1
     = let nidx = length heap
-          h' = heap ++ [v1]
+          h' = heap |> v1
       in tsid level $ Just (TermLoc nidx, h')
 
     | (TermRef i t1) <- term
@@ -177,7 +180,7 @@ eval1 level eqns heap term
     | (TermDeref _ v1) <- term
     , (TermLoc l) <- v1
     , l < length heap
-    = tsid level $ Just (heap !! l, heap)
+    = tsid level $ Just (S.index heap l, heap)
 
     | (TermDeref i t1) <- term
     , not $ isValue t1

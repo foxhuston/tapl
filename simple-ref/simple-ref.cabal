@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d759629cb930d63a64b22af4b21d2805fda8b75b09fc029dd4127aab27830853
+-- hash: ceec36f7068415f96d8bffbf27dd39c1b8aadc45148674d4b0af8be12ef0e773
 
 name:           simple-ref
 version:        0.1.0.0
@@ -41,6 +41,7 @@ library
   build-depends:
       array >=0.5.2 && <0.5.3
     , base >=4.7 && <5
+    , containers >=0.5 && <=0.6.1.0
     , mtl >=2.2.2 && <2.3
   default-language: Haskell2010
 
@@ -54,6 +55,7 @@ executable simple-ref-exe
   build-depends:
       array >=0.5.2 && <0.5.3
     , base >=4.7 && <5
+    , containers >=0.5 && <=0.6.1.0
     , mtl >=2.2.2 && <2.3
     , simple-ref
   default-language: Haskell2010
@@ -73,6 +75,7 @@ test-suite simple-ref-test
     , QuickCheck >=2.11.3 && <2.12
     , array >=0.5.2 && <0.5.3
     , base >=4.7 && <5
+    , containers >=0.5 && <=0.6.1.0
     , mtl >=2.2.2 && <2.3
     , simple-ref
     , tasty >=1.1.0.1 && <1.2

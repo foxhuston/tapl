@@ -58,7 +58,7 @@ runFile fileName = do
                     -- mapM_ print equations'
 
                     let ctx' = generateContextFromEquations equations' types
-                    let (heap, evalEqn) = generateHeapFromContext (reverse equations') []
+                    let (heap, evalEqn) = generateHeapFromContext (reverse equations')
 
                     putStrLn "-- Eqn Context --"
                     putStrLn $ showContext $ reverse ctx'
