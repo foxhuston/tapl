@@ -257,6 +257,7 @@ showTermInContext _ (TermFalse _) = "false"
 showTermInContext ctx (TermRef _ t) = "ref " ++ showTermInContext ctx t
 showTermInContext ctx (TermDeref _ t) = "!" ++ showTermInContext ctx t
 showTermInContext ctx (TermBecomes _ t1 t2) = showTermInContext ctx t1 ++ " := " ++ showTermInContext ctx t2
+showTermInContext ctx (TermLoc l) = "#LOC[" ++ show l ++ "]"
 
 showTermInContext _ t = error $ "Trying to show: " ++ (show t)
 

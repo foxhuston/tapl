@@ -4,13 +4,12 @@
 
 c = ref 0;
 
-decc = \_:(). (c := pred !c; !c);
+-- decc = \_:(). (c := pred !c; !c);
+-- incc = \_:(). (c := succ !c; !c);
 
-incc = \_:(). (c := succ !c; !c);
+!c;
 
--- main = incc ()
+-- incc ();
+-- incc ();
 
-incc ();
-incc ();
-
-decc ();
+-- decc ();

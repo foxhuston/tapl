@@ -47,8 +47,8 @@ runFile fileName = do
 
             case output of
                 (Right (forms, PState { context, types, equations })) -> do
-                    -- putStrLn "-- Equations --"
-                    -- mapM_ print equations
+                    putStrLn "-- Equations --"
+                    mapM_ print equations
 
                     -- putStrLn "-- Context --"
                     -- print context
