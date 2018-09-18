@@ -10,6 +10,8 @@ import Data.Terms.Utils
 
 import Debug.Trace
 
+type Heap = [Term]
+
 tt :: Show a => String -> a -> a
 -- tt msg x = trace (msg ++ ": " ++ (show x)) x
 tt _ x = x
@@ -20,7 +22,7 @@ tsid _ a = a
 
 eval :: EqnContext -> Term -> Term
 eval eqns t =
-    case eval1 0 eqns t of
+    case eval1 0 eqns [] t of
         Just t' -> eval eqns t'
         Nothing -> t
 
@@ -48,15 +50,15 @@ letSub p v1 t2 = let
         walk [] t = t
         walk ((j, s):cs) t = walk cs $ termSub j s t
 
-eval1 :: Int -> EqnContext -> Term -> Maybe Term
-eval1 level eqns term
+eval1 :: Int -> EqnContext -> Heap -> Term -> Maybe Term
+eval1 level eqns heap term
     | (TermApp i t1 t2) <- term
-    , (Just t1') <- eval1 (level+1) eqns t1
+    , (Just t1') <- eval1 (level+1) eqns heap t1
     = tsid level $ Just $ TermApp i t1' t2
 
     | (TermApp i v1 t2) <- term
     , isValue v1
-    , (Just t2') <- eval1 (level+1) eqns t2
+    , (Just t2') <- eval1 (level+1) eqns heap t2
     = tsid level $ Just $ TermApp i v1 t2'
 
     | (TermApp _ (TermAbs i n _ t1) t2) <- term
@@ -66,16 +68,16 @@ eval1 level eqns term
     | (TermIf i t1 t2 t3) <- term
     , isValue t1
     , isValue t2
-    , (Just t3') <- eval1 (level+1) eqns t3
+    , (Just t3') <- eval1 (level+1) eqns heap t3
     = tsid level $ Just $ TermIf i t1 t2 t3'
 
     | (TermIf i t1 t2 t3) <- term
     , isValue t1
-    , (Just t2') <- eval1 (level+1) eqns t2
+    , (Just t2') <- eval1 (level+1) eqns heap t2
     = tsid level $ Just $ TermIf i t1 t2' t3
 
     | (TermIf i t1 t2 t3) <- term
-    , (Just t1') <- eval1 (level+1) eqns t1
+    , (Just t1') <- eval1 (level+1) eqns heap t1
     = tsid level $ Just $ TermIf i t1' t2 t3
 
     | (TermIf _ (TermTrue _) t2 _) <- term
@@ -85,7 +87,7 @@ eval1 level eqns term
     = tsid level $ Just t3
 
     | (TermSucc i t1) <- term
-    , (Just t1') <- eval1 (level+1) eqns t1
+    , (Just t1') <- eval1 (level+1) eqns heap t1
     = tsid level $ Just $ TermSucc i t1'
 
     | (TermSucc _ v1) <- term
@@ -96,7 +98,7 @@ eval1 level eqns term
     = tsid level $ Just $ TermNat i 0
 
     | (TermPred i t1) <- term
-    , (Just t1') <- eval1 (level+1) eqns t1
+    , (Just t1') <- eval1 (level+1) eqns heap t1
     = tsid level $ Just $ TermPred i t1'
 
     | (TermPred _ v1) <- term
@@ -104,7 +106,7 @@ eval1 level eqns term
     = tsid level $ Just $ TermNat i (n - 1)
 
     | (TermIsZero i t1) <- term
-    , (Just t1') <- eval1 (level+1) eqns t1
+    , (Just t1') <- eval1 (level+1) eqns heap t1
     = tsid level $ Just $ TermIsZero i t1'
 
     | (TermIsZero i (TermNat _ 0)) <- term
@@ -115,7 +117,7 @@ eval1 level eqns term
 
     | (TermTup i ts) <- term
     , (values, (nv:nvs)) <- partition (isValue) ts
-    , (Just nv') <- eval1 (level+1) eqns nv
+    , (Just nv') <- eval1 (level+1) eqns heap nv
     = tsid level $ Just $ TermTup i (values ++ (nv':nvs))
 
     | (TermTupProjection i v1 n) <- term
@@ -124,12 +126,12 @@ eval1 level eqns term
     = tsid level $ Just $ ts !! (fromIntegral n)
 
     | (TermTupProjection i t1 n) <- term
-    , (Just t1') <- eval1 (level+1) eqns t1
+    , (Just t1') <- eval1 (level+1) eqns heap t1
     = tsid level $ Just $ TermTupProjection i t1' n
 
     | (TermRecord i ts) <- term
     , (values, ((l,nv):nvs)) <- partition (isValue.snd) ts
-    , (Just nv') <- eval1 (level+1) eqns nv
+    , (Just nv') <- eval1 (level+1) eqns heap nv
     = tsid level $ Just $ TermRecord i (values ++ (l, nv'):nvs)
 
     | (TermRecordProjection i v1 l) <- term
@@ -138,11 +140,11 @@ eval1 level eqns term
     = tsid level $ lookup l ts
 
     | (TermRecordProjection i t1 l) <- term
-    , (Just t1') <- eval1 (level+1) eqns t1
+    , (Just t1') <- eval1 (level+1) eqns heap t1
     = tsid level $ Just $ TermRecordProjection i t1' l
 
     | (TermTag i s t1 tt) <- term
-    , (Just t1') <- eval1 (level+1) eqns t1
+    , (Just t1') <- eval1 (level+1) eqns heap t1
     = tsid level $ Just $ TermTag i s t1' tt
 
     | (TermCase i (TermTag _ label v1 tt) bindings) <- term
@@ -157,7 +159,7 @@ eval1 level eqns term
     = tsid level $ Just $ letSub m v1 t2
 
     | (TermLet i m t1 t2) <- term
-    , (Just t1') <- eval1 (level+1) eqns t1
+    , (Just t1') <- eval1 (level+1) eqns heap t1
     = tsid level $ Just $ TermLet i m t1' t2
 
     | (TermVar _ n) <- term

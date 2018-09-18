@@ -38,6 +38,7 @@ data Term =
     | TermRef Info Term
     | TermBecomes Info Term Term
     | TermDeref Info Term
+    | TermLoc Int
     deriving (Show, Eq)
     
 data Info =
