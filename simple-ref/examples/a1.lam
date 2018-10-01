@@ -1,0 +1,21 @@
+-- {cost=30, partno=12345};
+
+-- (\x:{cost:Nat, partno:Nat}. x.cost);
+
+-- (\x:{cost:Nat, partno:Nat}. x.cost) {cost=30, partno=12345};
+
+-- {cost=30, partno=2903409}.seven
+
+-- let x = (\x:Bool. \y:Nat. succ y)
+-- in x false 3
+
+
+-- let {cost=x} = {cost=30, partno=12345}
+-- in succ succ succ x;
+
+let mkPart=(\c:Nat. \p:Nat. {cost=c, partNo=p})
+in let {cost=x} = mkPart 2 345
+in succ x;
+
+-- let mkPart=(\c:Nat. \p:Nat. {cost=c, partNo=p})
+-- in mkPart;

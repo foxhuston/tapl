@@ -7,16 +7,6 @@ import Data.Bifunctor (second)
 
 import Lib
 
-
--- str = "(\\x:Bool->Bool. if x false then true else false)\n(\\x:Bool. if x then false else true)"
-
--- main :: IO ()
--- main = do
---     putStrLn $ str ++ " -> "
---     let toks = tokenize str
---     print toks
---     print . parse $ toks
-
 main :: IO ()
 main = do
     args <- getArgs
@@ -42,31 +32,63 @@ runFile fileName = do
         (Left err) -> putStrLn err
         (Right toks) -> do
             let output = parse toks
-            print output
-            putStrLn "---"
+            -- putStrLn "-- PARSE --"
+            -- print output
+            -- putStrLn "---"
 
             case output of
                 (Right (forms, PState { context, types, equations })) -> do
+                    -- putStrLn "\n-- Equations --"
+                    -- mapM_ print equations
+
+                    -- putStrLn "-- Context --"
+                    -- print context
+
                     let equations' = map (second desugarTerm) equations
-                    -- print equations'
-                    -- putStrLn "--"
+                    -- putStrLn "\n-- Desugared --"
+                    -- mapM_ print equations'
+
                     let ctx' = generateContextFromEquations equations' types
+                    let (heap, evalEqn) = generateHeapFromContext equations'
+
+                    putStrLn "\n-- Eqn Context --"
                     putStrLn $ showContext ctx'
+
+                    -- putStrLn "\n-- Heap --"
+                    -- print heap
+
+                    -- putStrLn "\n-- Evaled Equations --"
+                    -- mapM_ print evalEqn
+
                     -- let (Just mainEqn) = lookup "main" equations'
                     -- putStrLn "---mainEqn---"
                     -- print mainEqn
 
-                    mapM_ (printForm ctx' types equations') forms
+                    putStrLn "\n-- Evaluations --"
+                    printForms ctx' types evalEqn heap forms
                 (Left error) -> putStrLn error
 
-printForm :: Context -> TypeContext -> EqnContext -> Term -> IO ()
-printForm context typeContext equations term = do
+
+printForms :: Context -> TypeContext -> EqnContext -> Heap -> [Term] -> IO ()
+printForms _ _ _ _ [] = return ()
+printForms context typeContext equations heap (t:ts) = do
+    -- putStrLn "--- HEAP ---"
+    -- print heap
+    -- putStrLn $ "--- " ++ (show t) ++ " ---"
+
+    h' <- printForm context typeContext equations heap t
+    printForms context typeContext equations h' ts
+
+printForm :: Context -> TypeContext -> EqnContext -> Heap -> Term -> IO Heap
+printForm context typeContext equations heap term = do
     let term' = desugarTerm term
     putStr $ showTermInContext context term'
     putStr ": "
     print $ typeOf context typeContext term'
     putStr "\n= "
     -- putStr "main = "
-    putStrLn $ showTermInContext context $ eval equations term'
+    let (term, h') = eval equations heap term' 
+    putStrLn $ showTermInContext context $ term
     putStrLn "---\n"
+    return h'
 

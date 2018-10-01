@@ -24,7 +24,7 @@ $special = [\(\)\,\.\:\<\>\=\[\]\`\|\{\}\_]
 @string = \" ($graphic # \") * \"
 
 @reservedid = 
-  if|then|else|true|false|succ|pred|iszero|let|in|as|of|case|type|ref
+  if|then|else|true|false|succ|pred|iszero|let|in|as|of|case|type|ref|equals
   
 @reservedop =
   "->" | "\" | ";" | "=>" | ":=" | "!"

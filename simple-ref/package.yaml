@@ -1,0 +1,57 @@
+name:                simple-ref
+version:             0.1.0.0
+github:              "githubuser/simple-ref"
+license:             BSD3
+author:              "Author name here"
+maintainer:          "example@example.com"
+copyright:           "2018 Author name here"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/githubuser/simple-ref#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- array >= 0.5.2 && < 0.5.3
+- mtl >= 2.2.2 && < 2.3
+- containers >= 0.5 && <= 0.6.1.0
+
+library:
+  source-dirs: src
+
+executables:
+  simple-ref-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - simple-ref
+
+tests:
+  simple-ref-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - simple-ref
+    - QuickCheck >= 2.11.3 && < 2.12
+    - HUnit >= 1.6.0.0 && < 1.7
+    - tasty >= 1.1.0.1 && < 1.2
+    - tasty-th >= 0.1.7 && < 0.2
+    - tasty-quickcheck >= 0.10 && < 0.11
+    - tasty-hunit >= 0.10.0.1 && < 0.11

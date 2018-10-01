@@ -1,0 +1,45 @@
+-- x = (\x:Bool->Bool. x) (\y:Bool. y);
+
+-- y = (\x:(Nat, Nat). succ (x.1)) (2, 3);
+
+-- c = ref 0;
+-- x = ref (\x:Nat. succ x);
+
+-- decc = \_:(). (c := pred !c; !c);
+-- incc = \_:(). (c := succ !c; !c);
+
+-- incc ();
+-- incc ();
+
+-- decc ();
+
+-- !x 3;
+
+-- c = ref ((\x:Nat. succ x) 3);
+
+-- !c;
+
+-- Nat Array Example --
+
+-- (\n:Nat. succ n) 3;
+
+type NatArray = Ref (Nat->Nat);
+
+newArray = \_:(). ref (\n:Nat. 0);
+
+lookup = \a:NatArray. \n:Nat. (!a) n;
+
+update = \a:NatArray. \m:Nat. \v:Nat.
+  let oldf = !a
+  in a := (\n:Nat. if equals m n then v else oldf n);
+
+
+arr = newArray ();
+
+lookup arr 0;
+lookup arr 1;
+
+update arr 1 10;
+
+-- !arr;
+lookup arr 1;
