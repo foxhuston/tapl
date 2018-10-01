@@ -7,16 +7,6 @@ import Data.Bifunctor (second)
 
 import Lib
 
-
--- str = "(\\x:Bool->Bool. if x false then true else false)\n(\\x:Bool. if x then false else true)"
-
--- main :: IO ()
--- main = do
---     putStrLn $ str ++ " -> "
---     let toks = tokenize str
---     print toks
---     print . parse $ toks
-
 main :: IO ()
 main = do
     args <- getArgs
@@ -42,38 +32,39 @@ runFile fileName = do
         (Left err) -> putStrLn err
         (Right toks) -> do
             let output = parse toks
-            -- print output
-            -- putStrLn "---"
+            putStrLn "-- PARSE --"
+            print output
+            putStrLn "---"
 
             case output of
                 (Right (forms, PState { context, types, equations })) -> do
-                    -- putStrLn "-- Equations --"
-                    -- mapM_ print equations
+                    putStrLn "\n-- Equations --"
+                    mapM_ print equations
 
                     -- putStrLn "-- Context --"
                     -- print context
 
                     let equations' = map (second desugarTerm) equations
-                    -- putStrLn "-- Desugared --"
-                    -- mapM_ print equations'
+                    putStrLn "\n-- Desugared --"
+                    mapM_ print equations'
 
                     let ctx' = generateContextFromEquations equations' types
-                    let (heap, evalEqn) = generateHeapFromContext (reverse equations')
+                    let (heap, evalEqn) = generateHeapFromContext equations'
 
-                    putStrLn "-- Eqn Context --"
-                    putStrLn $ showContext $ reverse ctx'
+                    putStrLn "\n-- Eqn Context --"
+                    putStrLn $ showContext ctx'
 
-                    -- putStrLn "-- Heap --"
-                    -- print heap
+                    putStrLn "\n-- Heap --"
+                    print heap
 
-                    -- putStrLn "-- Evaled Equations --"
-                    -- mapM_ print evalEqn
+                    putStrLn "\n-- Evaled Equations --"
+                    mapM_ print evalEqn
 
                     -- let (Just mainEqn) = lookup "main" equations'
                     -- putStrLn "---mainEqn---"
                     -- print mainEqn
 
-                    putStrLn "-- Evaluations --"
+                    putStrLn "\n-- Evaluations --"
                     printForms ctx' types evalEqn heap forms
                 (Left error) -> putStrLn error
 
@@ -81,6 +72,10 @@ runFile fileName = do
 printForms :: Context -> TypeContext -> EqnContext -> Heap -> [Term] -> IO ()
 printForms _ _ _ _ [] = return ()
 printForms context typeContext equations heap (t:ts) = do
+    putStrLn "--- HEAP ---"
+    print heap
+    putStrLn $ "--- " ++ (show t) ++ " ---"
+
     h' <- printForm context typeContext equations heap t
     printForms context typeContext equations h' ts
 

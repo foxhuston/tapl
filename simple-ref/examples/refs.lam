@@ -2,20 +2,26 @@
 
 -- y = (\x:(Nat, Nat). succ (x.1)) (2, 3);
 
-c = ref 0;
-x = ref (\x:Nat. succ x);
+-- c = ref 0;
+-- x = ref (\x:Nat. succ x);
 
-decc = \_:(). (c := pred !c; !c);
-incc = \_:(). (c := succ !c; !c);
+-- decc = \_:(). (c := pred !c; !c);
+-- incc = \_:(). (c := succ !c; !c);
 
-incc ();
-incc ();
+-- incc ();
+-- incc ();
 
-decc ();
+-- decc ();
 
-!x 3;
+-- !x 3;
+
+-- c = ref ((\x:Nat. succ x) 3);
+
+-- !c;
 
 -- Nat Array Example --
+
+-- (\n:Nat. succ n) 3;
 
 type NatArray = Ref (Nat->Nat);
 
@@ -30,5 +36,13 @@ update = \a:NatArray. \m:Nat. \v:Nat.
 
 arr = newArray ();
 
+arr;
+!arr;
+
+lookup arr 0;
+lookup arr 1;
+
 update arr 1 10;
+
+!arr;
 lookup arr 1;

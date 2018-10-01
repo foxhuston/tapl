@@ -153,14 +153,16 @@ contextLength :: Context -> Int
 contextLength = length
 
 indexToName :: Context -> Int -> VarName
-indexToName ctx n = fst $ ctx !! ((length ctx) - 1 - n)
+indexToName ctx n = let x = fst $ ctx !! ((length ctx) - 1 - n)
+                    in trace ("ITN [" ++ show n ++ "]" ++ " = " ++ show x) x
 
 getIndexFromContext :: Context -> String -> Maybe Int
 getIndexFromContext ctx name = findIndex (\(s, _) -> (VarName name) == s) $ reverse ctx
 
 getTypeFromContext :: Context -> Int -> Maybe TermType
-getTypeFromContext ctx x =
-    (\(VarBind tt) -> tt) <$> lookup (indexToName ctx x) ctx
+getTypeFromContext ctx x = let itn = indexToName (traceShowId ctx) x
+                               y = (\(VarBind tt) -> tt) <$> lookup itn ctx
+                           in trace ("GTFC [" ++ show itn ++ "] = " ++ show y) y
 
 addBinding :: Context -> VarName -> Binding -> Context
 addBinding ctx s b = ctx ++ [(s, b)]
@@ -226,7 +228,7 @@ showTermInContext ctx (TermIf _ t1 t2 t3) =
           ++ showTermInContext ctx t2
           ++ " else "
           ++ showTermInContext ctx t3
-showTermInContext ctx (TermEquals _ t1 t2) = "(equals " ++ showTermInContext ctx t1 ++ ", " ++ showTermInContext ctx t2 ++ ")"
+showTermInContext ctx (TermEquals _ t1 t2) = "(equals " ++ showTermInContext ctx t1 ++ " " ++ showTermInContext ctx t2 ++ ")"
 showTermInContext ctx (TermSucc _ t1) = "(succ " ++ showTermInContext ctx t1 ++ ")"
 showTermInContext ctx (TermPred _ t1) = "(pred " ++ showTermInContext ctx t1 ++ ")"
 showTermInContext ctx (TermIsZero _ t1) = "(iszero " ++ showTermInContext ctx t1 ++ ")"
@@ -273,6 +275,5 @@ isValue (TermLoc _)       = True
 isValue (TermTup _ ts)    = all isValue ts
 isValue (TermRecord _ ts) = all (isValue.snd) ts
 isValue (TermTag _ _ t _) = isValue t
-isValue (TermDeref _ t)   = isValue t
 isValue (TermRef _ t)     = isValue t
 isValue _                 = False

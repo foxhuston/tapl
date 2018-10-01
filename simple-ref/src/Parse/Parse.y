@@ -237,10 +237,10 @@ trimLexString :: String -> String
 trimLexString = tail . init
 
 traceShowMsg :: Show a => String -> a -> a
--- traceShowMsg msg x = let
---     s = msg ++ ": " ++ show x ++ "\n"
---     in trace s x
-traceShowMsg _ x = x
+traceShowMsg msg x = let
+    s = msg ++ ": " ++ show x ++ "\n"
+    in trace s x
+-- traceShowMsg _ x = x
 
 data PState = PState {
         context :: [Context],
@@ -268,10 +268,11 @@ storeEquation name term = do
     pstate <- get
     let ctx = context pstate
     let eqns = equations pstate
-    put $ pstate {
+    let ps' = pstate {
         equations = (name,term) : eqns,
         context = [(VarName name, NameBind)] : ctx
     }
+    put $ traceShowMsg "storeEquation" ps'
     return ()
 
 popContext :: P ()
@@ -333,7 +334,7 @@ revEqns :: PState -> PState
 revEqns p@(PState { equations }) = p { equations = reverse equations }
 
 parse' :: [Lexeme] -> Either String ([Maybe Term], PState)
-parse' l = second revEqns <$> runStateT (parseProgram l) (PState [] [] [] [])
+parse' l = runStateT (parseProgram l) (PState [] [] [] [])
 
 parse l = unMaybeFirst <$> parse' l
 }

@@ -23,8 +23,8 @@ tt msg x = trace (msg ++ ": " ++ (show x)) x
 -- tt _ x = x
 
 tsid :: Show a => Int -> a -> a
--- tsid n a = trace ((concat $ map (const "  ") [1..n]) ++ (show a)) a
-tsid _ a = a
+tsid n a = trace ((concat $ map (const "  ") [1..n]) ++ (show a)) a
+-- tsid _ a = a
 
 eval :: EqnContext -> Heap -> Term -> (Term, Heap)
 eval eqns h t = 
@@ -33,12 +33,12 @@ eval eqns h t =
         Nothing -> (t, h)
 
 generateHeapFromContext :: EqnContext -> (Heap, EqnContext)
-generateHeapFromContext e = ghfc' e [] S.empty
+generateHeapFromContext e = ghfc' (reverse e) [] S.empty
     where ghfc' :: EqnContext -> EqnContext -> Heap -> (Heap, EqnContext)
-          ghfc' [] e h = (h, e)
-          ghfc' (e:es) ctx h =
-            let (e', h') = eval ctx h (snd e)
-            in ghfc' es (ctx ++ [(fst e, e')]) h'
+          ghfc' [] ctx h = (h, ctx)
+          ghfc' ((name, term):es) ctx h =
+            let (t', h') = eval (tt "gcfe ctx" ctx) h (tt "ghfc eqn" $ term)
+            in ghfc' es (tt "gcfe next ctx" ((name, t') : ctx)) h'
 
 matchContext :: MatchPattern -> Term -> [(VarName, Term)]
 matchContext (MatchVar s) t = [(s, t)]
@@ -56,7 +56,7 @@ getMatchContext p t = numberContext $ matchContext p t
 
 letSub :: MatchPattern -> Term -> Term -> Term
 letSub p v1 t2 = let
-    ctx = tt "letSub ctx" $ getMatchContext p v1
+    ctx = tt "letSub ctx" $ getMatchContext p $ tt "letSub v1" v1
     lc  = length ctx
     ctx' = tt "letSub ctx'" $ map (second (termShift lc)) ctx
     in walk ctx' t2
@@ -194,7 +194,7 @@ eval1 level eqns heap term
     | (TermDeref _ v1) <- term
     , (TermLoc l) <- v1
     , l < length heap
-    = tsid level $ Just (S.index heap l, heap)
+    = tsid level $ tt "Deref loc" $ Just (S.index heap l, heap)
 
     | (TermDeref i t1) <- term
     , not $ isValue t1
@@ -204,7 +204,7 @@ eval1 level eqns heap term
     | (TermBecomes i (TermLoc l) v1) <- term
     , isValue v1
     = let h' = S.update l v1 heap
-      in Just (TermTup i [], h')
+      in tt "TermBecomes" $ Just (TermTup i [], h')
 
     | (TermBecomes i v1 t2) <- term
     , isValue v1
@@ -218,7 +218,7 @@ eval1 level eqns heap term
     -- Let is like a binder from left to right, without the actual binding...
     | (TermLet i m v1 t2) <- term
     , isValue v1
-    = tsid level $ Just (letSub m v1 t2, heap)
+    = tt "TermLet Value" $ Just (letSub m v1 t2, (tt "TermLet v1 heap" heap))
 
     | (TermLet i m t1 t2) <- term
     , (Just (t1', h')) <- eval1 (level+1) eqns heap t1
@@ -226,7 +226,7 @@ eval1 level eqns heap term
 
     | (TermVar _ n) <- term
     , n >= 0 && n < length eqns 
-    = tsid level $ Just (indexToEquation eqns n, heap)
+    = tt "TermVar" $ Just (indexToEquation eqns n, heap)
 
     | _ <- term
     = tsid level $ Nothing

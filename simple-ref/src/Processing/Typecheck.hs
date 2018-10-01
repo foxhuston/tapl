@@ -21,7 +21,7 @@ matchType (MatchRecord ps) (TypeRecord ts) =
 matchType p t = error $ "Invalid Match: " ++ (show p) ++ " for type " ++ (show t)
 
 generateContextFromEquations :: EqnContext -> TypeContext -> Context
-generateContextFromEquations eqns tc = gcfe' [] $ eqns
+generateContextFromEquations eqns tc = gcfe' [] $ reverse eqns
     where
         dst = desugarTypes tc
         st = sugarTypes tc
