@@ -153,16 +153,13 @@ contextLength :: Context -> Int
 contextLength = length
 
 indexToName :: Context -> Int -> VarName
-indexToName ctx n = let x = fst $ ctx !! ((length ctx) - 1 - n)
-                    in trace ("ITN [" ++ show n ++ "]" ++ " = " ++ show x) x
+indexToName ctx n = fst $ ctx !! ((length ctx) - 1 - n)
 
 getIndexFromContext :: Context -> String -> Maybe Int
 getIndexFromContext ctx name = findIndex (\(s, _) -> (VarName name) == s) $ reverse ctx
 
 getTypeFromContext :: Context -> Int -> Maybe TermType
-getTypeFromContext ctx x = let itn = indexToName (traceShowId ctx) x
-                               y = (\(VarBind tt) -> tt) <$> lookup itn ctx
-                           in trace ("GTFC [" ++ show itn ++ "] = " ++ show y) y
+getTypeFromContext ctx x = (\(VarBind tt) -> tt) <$> lookup (indexToName ctx x) ctx
 
 addBinding :: Context -> VarName -> Binding -> Context
 addBinding ctx s b = ctx ++ [(s, b)]

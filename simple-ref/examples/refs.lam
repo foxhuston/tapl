@@ -36,13 +36,10 @@ update = \a:NatArray. \m:Nat. \v:Nat.
 
 arr = newArray ();
 
-arr;
-!arr;
-
 lookup arr 0;
 lookup arr 1;
 
 update arr 1 10;
 
-!arr;
+-- !arr;
 lookup arr 1;

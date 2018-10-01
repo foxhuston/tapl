@@ -19,12 +19,12 @@ import Data.Sequence ((|>), (><))
 type Heap = S.Seq Term
 
 tt :: Show a => String -> a -> a
-tt msg x = trace (msg ++ ": " ++ (show x)) x
--- tt _ x = x
+-- tt msg x = trace (msg ++ ": " ++ (show x)) x
+tt _ x = x
 
 tsid :: Show a => Int -> a -> a
-tsid n a = trace ((concat $ map (const "  ") [1..n]) ++ (show a)) a
--- tsid _ a = a
+-- tsid n a = trace ((concat $ map (const "  ") [1..n]) ++ (show a)) a
+tsid _ a = a
 
 eval :: EqnContext -> Heap -> Term -> (Term, Heap)
 eval eqns h t = 

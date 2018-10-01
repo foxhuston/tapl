@@ -32,21 +32,21 @@ runFile fileName = do
         (Left err) -> putStrLn err
         (Right toks) -> do
             let output = parse toks
-            putStrLn "-- PARSE --"
-            print output
-            putStrLn "---"
+            -- putStrLn "-- PARSE --"
+            -- print output
+            -- putStrLn "---"
 
             case output of
                 (Right (forms, PState { context, types, equations })) -> do
-                    putStrLn "\n-- Equations --"
-                    mapM_ print equations
+                    -- putStrLn "\n-- Equations --"
+                    -- mapM_ print equations
 
                     -- putStrLn "-- Context --"
                     -- print context
 
                     let equations' = map (second desugarTerm) equations
-                    putStrLn "\n-- Desugared --"
-                    mapM_ print equations'
+                    -- putStrLn "\n-- Desugared --"
+                    -- mapM_ print equations'
 
                     let ctx' = generateContextFromEquations equations' types
                     let (heap, evalEqn) = generateHeapFromContext equations'
@@ -54,11 +54,11 @@ runFile fileName = do
                     putStrLn "\n-- Eqn Context --"
                     putStrLn $ showContext ctx'
 
-                    putStrLn "\n-- Heap --"
-                    print heap
+                    -- putStrLn "\n-- Heap --"
+                    -- print heap
 
-                    putStrLn "\n-- Evaled Equations --"
-                    mapM_ print evalEqn
+                    -- putStrLn "\n-- Evaled Equations --"
+                    -- mapM_ print evalEqn
 
                     -- let (Just mainEqn) = lookup "main" equations'
                     -- putStrLn "---mainEqn---"
@@ -72,9 +72,9 @@ runFile fileName = do
 printForms :: Context -> TypeContext -> EqnContext -> Heap -> [Term] -> IO ()
 printForms _ _ _ _ [] = return ()
 printForms context typeContext equations heap (t:ts) = do
-    putStrLn "--- HEAP ---"
-    print heap
-    putStrLn $ "--- " ++ (show t) ++ " ---"
+    -- putStrLn "--- HEAP ---"
+    -- print heap
+    -- putStrLn $ "--- " ++ (show t) ++ " ---"
 
     h' <- printForm context typeContext equations heap t
     printForms context typeContext equations h' ts

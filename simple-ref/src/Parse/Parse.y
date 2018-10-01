@@ -237,10 +237,10 @@ trimLexString :: String -> String
 trimLexString = tail . init
 
 traceShowMsg :: Show a => String -> a -> a
-traceShowMsg msg x = let
-    s = msg ++ ": " ++ show x ++ "\n"
-    in trace s x
--- traceShowMsg _ x = x
+-- traceShowMsg msg x = let
+--     s = msg ++ ": " ++ show x ++ "\n"
+--     in trace s x
+traceShowMsg _ x = x
 
 data PState = PState {
         context :: [Context],

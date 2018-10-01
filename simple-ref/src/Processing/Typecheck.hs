@@ -10,7 +10,8 @@ import Data.Terms
 import Debug.Trace
 
 tt :: Show a => String -> a -> a
-tt msg a = trace (msg ++ ": " ++ show a) a
+-- tt msg a = trace (msg ++ ": " ++ show a) a
+tt _ a = a
 
 matchType :: MatchPattern -> TermType -> Context
 matchType (MatchVar s) t = [(s, VarBind t)]
